@@ -21,7 +21,7 @@ import java.io.InputStream
 
 interface IRemoteDataSource {
 
-    val radioApi: String get() = "https://db.satnogs.org/api/transmitters/?format=json&status=active"
+    val radioApi: String get() = "https://tle.486520.xyz/https://db.satnogs.org/api/transmitters/?format=json&status=active"
 
     suspend fun getDataStream(url: String): InputStream?
 }
