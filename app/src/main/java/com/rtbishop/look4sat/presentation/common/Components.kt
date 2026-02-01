@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.common
 
 import androidx.compose.foundation.MarqueeSpacing
@@ -108,7 +125,7 @@ fun RowScope.NextPassRow(pass: OrbitalPass, modifier: Modifier = Modifier) {
 //                .background(color = MaterialTheme.colorScheme.background)
                 .padding(start = 6.dp, top = 1.dp, end = 6.dp, bottom = 0.dp)
         ) {
-            val passSatId = stringResource(id = R.string.passes_satId, pass.catNum)
+            val passSatId = stringResource(id = R.string.pass_satId, pass.catNum)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "$passSatId - ",
@@ -175,7 +192,7 @@ fun RowScope.NextPassRow(pass: OrbitalPass, modifier: Modifier = Modifier) {
                 ) {
                     Text(
                         text = stringResource(
-                            id = R.string.passes_aosLos,
+                            id = R.string.pass_aosLos,
                             pass.aosAzimuth.toInt(),
                             pass.losAzimuth.toInt()
                         ),
@@ -232,9 +249,10 @@ fun EmptyListCard(message: String) {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier.padding(32.dp)
         ) {
+            Text(text = """¯\_(ツ)_/¯""", fontSize = 32.sp)
             Text(text = stringResource(R.string.empty_list_message), fontSize = 21.sp)
             Text(text = message, fontSize = 18.sp, textAlign = TextAlign.Center)
         }
@@ -242,7 +260,7 @@ fun EmptyListCard(message: String) {
 }
 
 fun getDefaultPass(): OrbitalPass {
-    val orbitalData = OrbitalData("||=<☉>=||", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0)
+    val orbitalData = OrbitalData(""" ¯\_(ツ)_/¯ ⚠️""", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0)
     val satellite = NearEarthObject(orbitalData)
     return OrbitalPass(0L, 0.0, Long.MAX_VALUE, 0.0, 0, 0.0, satellite, 0f)
 }

@@ -1,6 +1,22 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.radar
 
-import android.media.SoundPool
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -10,7 +26,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -27,8 +42,6 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -49,8 +62,8 @@ fun RadarViewCompose(
     shouldUseCompass: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val view = LocalView.current
+//    val context = LocalContext.current
+//    val view = LocalView.current
     val radarColor = MaterialTheme.colorScheme.secondary
     val trackColor = MaterialTheme.colorScheme.primary
     val aimColor = MaterialTheme.colorScheme.error
@@ -58,15 +71,15 @@ fun RadarViewCompose(
     val animTransition = rememberInfiniteTransition(label = "animScale")
     val animSpec = infiniteRepeatable<Float>(tween(1000))
     val animScale = animTransition.animateFloat(16f, 64f, animSpec, label = "animScale")
-    val aimThreshold = 0.05f
+//    val aimThreshold = 0.05f
     val measurer = rememberTextMeasurer()
     val sweepDegrees = remember { mutableFloatStateOf(0f) }
     val trackCreated = remember { mutableStateOf(false) }
     val trackPath = remember { mutableStateOf(Path()) }
     val trackEffect = remember { mutableStateOf(PathEffect.cornerPathEffect(0f)) }
-    val soundPool = remember { mutableStateOf<SoundPool?>(null) }
-    val beepSoundId = remember { mutableIntStateOf(0) }
-    val aimTargetDifference = remember { mutableFloatStateOf(0f) }
+//    val soundPool = remember { mutableStateOf<SoundPool?>(null) }
+//    val beepSoundId = remember { mutableIntStateOf(0) }
+//    val aimTargetDifference = remember { mutableFloatStateOf(0f) }
 
 //    LaunchedEffect(item.azimuth, item.elevation, azimElev.first, azimElev.second) {
 //        val aimAzimuthRadians = azimElev.first.toDouble().toRadians()
@@ -78,13 +91,10 @@ fun RadarViewCompose(
 //        val satX = sph2CartX(item.azimuth, item.elevation, radius)
 //        val satY = sph2CartY(item.azimuth, item.elevation, radius)
 //        aimTargetDifference.floatValue = sqrt((satX - aimX).pow(2) + (satY - aimY).pow(2))
-//
-//
 //        val minPlaybackRate = 0.5f
 //        val maxPlaybackRate = 2.0f
 //        val playbackRate =
 //            maxPlaybackRate - (aimTargetDifference.floatValue / (maxPlaybackRate - minPlaybackRate))
-//
 //        soundPool.value?.setRate(beepSoundId.intValue, playbackRate)
 //    }
 //
@@ -110,20 +120,16 @@ fun RadarViewCompose(
 //            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
 //            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
 //            .build()
-//
 //        soundPool.value = SoundPool.Builder()
 //            .setMaxStreams(1)
 //            .setAudioAttributes(audioAttributes)
 //            .build()
-//
 //        beepSoundId.intValue = soundPool.value?.load(context, R.raw.beep, 1) ?: 0
-//
 //        soundPool.value?.setOnLoadCompleteListener { soundPool, _, status ->
 //            if (status == 0) {
 //                soundPool.play(beepSoundId.intValue, 0.5f, 0.5f, 0, -1, 1f)
 //            }
 //        }
-//
 //        onDispose {
 //            soundPool.value?.release()
 //        }

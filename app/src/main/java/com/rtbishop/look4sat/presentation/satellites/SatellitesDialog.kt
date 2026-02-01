@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.satellites
 
 import androidx.compose.foundation.background
@@ -42,7 +59,7 @@ fun MultiTypesDialog(
         if (selected.contains(type)) selected.remove(type) else selected.add(type)
     }
     val onAccept = { accept(selected.toList()) }
-    SharedDialog(title = stringResource(R.string.satellites_select_type), onCancel = cancel, onAccept = onAccept) {
+    SharedDialog(title = stringResource(R.string.sat_type_title), onCancel = cancel, onAccept = onAccept) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(240.dp),
             modifier = Modifier

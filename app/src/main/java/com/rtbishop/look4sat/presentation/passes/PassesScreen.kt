@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.passes
 
 import androidx.compose.foundation.background
@@ -95,8 +112,8 @@ private fun PassesScreen(uiState: PassesState, navigateToRadar: (Int, Long) -> U
     }
     if (uiState.shouldSeeWelcome) {
         InfoDialog(
-            title = stringResource(R.string.passes_welcome_title),
-            text = stringResource(R.string.passes_welcome_message)
+            title = stringResource(R.string.pass_welcome_title),
+            text = stringResource(R.string.pass_welcome_message)
         ) {
             uiState.takeAction(PassesAction.DismissWelcome)
         }
@@ -120,7 +137,7 @@ private fun PassesScreen(uiState: PassesState, navigateToRadar: (Int, Long) -> U
                 }
             )
         }
-    ) { isVerticalLayout ->
+    ) { _ ->
         PassesList(
             isRefreshing = uiState.isRefreshing,
             passes = uiState.itemsList,
@@ -158,7 +175,7 @@ private fun PassesList(
             }
         ) {
             if (passes.isEmpty()) {
-                EmptyListCard(message = stringResource(R.string.passes_empty_list_message))
+                EmptyListCard(message = stringResource(R.string.pass_empty_list_message))
             } else {
                 LazyVerticalGrid(
                     state = gridState,
@@ -204,7 +221,7 @@ private fun NearEarthPass(
     modifier: Modifier = Modifier,
     isVerticalLayout: Boolean = true
 ) {
-    val passSatId = stringResource(id = R.string.passes_satId, pass.catNum)
+    val passSatId = stringResource(id = R.string.pass_satId, pass.catNum)
     val horizontalPadding = if (isVerticalLayout) 6.dp else 10.dp
     Surface(color = MaterialTheme.colorScheme.background, modifier = modifier) {
         Surface(modifier = Modifier
@@ -254,7 +271,7 @@ private fun NearEarthPass(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (pass.isDeepSpace) {
-                            Text(text = stringResource(R.string.passes_deep_space), fontSize = 15.sp)
+                            Text(text = stringResource(R.string.pass_deep_space), fontSize = 15.sp)
                         } else {
                             Text(
                                 text = sdfDate.format(Date(pass.aosTime)),
@@ -285,7 +302,7 @@ private fun NearEarthPass(
                     ) {
                         Text(
                             text = stringResource(
-                                id = R.string.passes_aosLos,
+                                id = R.string.pass_aosLos,
                                 pass.aosAzimuth.toInt(),
                                 pass.losAzimuth.toInt()
                             ),

@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.radar
 
 import androidx.compose.animation.core.LinearEasing
@@ -12,10 +29,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,6 +64,7 @@ import com.rtbishop.look4sat.domain.model.SatRadio
 import com.rtbishop.look4sat.domain.utility.toDegrees
 import com.rtbishop.look4sat.presentation.MainTheme
 import com.rtbishop.look4sat.presentation.Screen
+import com.rtbishop.look4sat.presentation.common.EmptyListCard
 import com.rtbishop.look4sat.presentation.common.IconCard
 import com.rtbishop.look4sat.presentation.common.NextPassRow
 import com.rtbishop.look4sat.presentation.common.TimerRow
@@ -101,7 +117,9 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
             ElevatedCard(modifier = Modifier.weight(1f)) {
                 Box(contentAlignment = Alignment.Center) {
                     if (uiState.orbitalPos == null) {
-                        ElevatedCard(modifier = Modifier.fillMaxSize()) {}
+                        ElevatedCard(modifier = Modifier.fillMaxSize()) {
+                            EmptyListCard(message = "")
+                        }
                     }
                     uiState.orbitalPos?.let { position ->
                         RadarViewCompose(
@@ -154,23 +172,20 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
             }
             ElevatedCard(modifier = Modifier.weight(1f)) {
                 if (uiState.transmitters.isEmpty()) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_radios),
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "This satellite doesn't have any known transcievers...",
-                            textAlign = TextAlign.Center,
-                            fontSize = 18.sp,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(24.dp),
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Text(text = """¯\_(ツ)_/¯""", fontSize = 32.sp)
+                            Text(text = stringResource(R.string.empty_list_message), fontSize = 21.sp)
+                            Text(
+                                text = stringResource(R.string.radar_no_data),
+                                fontSize = 18.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -186,7 +201,9 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
                 ElevatedCard(modifier = Modifier.weight(1f)) {
                     Box(contentAlignment = Alignment.Center) {
                         if (uiState.orbitalPos == null) {
-                            ElevatedCard(modifier = Modifier.fillMaxSize()) {}
+                            ElevatedCard(modifier = Modifier.fillMaxSize()) {
+                                EmptyListCard(message = "")
+                            }
                         }
                         uiState.orbitalPos?.let { position ->
                             RadarViewCompose(
@@ -239,23 +256,20 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
                 }
                 ElevatedCard(modifier = Modifier.weight(1f)) {
                     if (uiState.transmitters.isEmpty()) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_radios),
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "This satellite doesn't have any known transcievers...",
-                                textAlign = TextAlign.Center,
-                                fontSize = 18.sp,
-                                modifier = Modifier.padding(16.dp)
-                            )
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(24.dp),
+                                modifier = Modifier.padding(32.dp)
+                            ) {
+                                Text(text = """¯\_(ツ)_/¯""", fontSize = 32.sp)
+                                Text(text = stringResource(R.string.empty_list_message), fontSize = 21.sp)
+                                Text(
+                                    text = stringResource(R.string.radar_no_data),
+                                    fontSize = 18.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     } else {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

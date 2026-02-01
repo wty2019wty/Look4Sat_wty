@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.settings
 
 import android.Manifest
@@ -9,6 +26,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,7 +51,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,7 +89,7 @@ fun NavGraphBuilder.settingsDestination() {
 private fun SettingsScreen(uiState: SettingsState) {
     // Permissions setup
     val bluetoothContract = ActivityResultContracts.RequestPermission()
-    val bluetoothError = stringResource(R.string.settings_BTremote_perm_error)
+    val bluetoothError = stringResource(R.string.prefs_bt_perm_error)
     val bluetoothPerm = when {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.S -> Manifest.permission.BLUETOOTH
         else -> Manifest.permission.BLUETOOTH_CONNECT
@@ -84,7 +101,7 @@ private fun SettingsScreen(uiState: SettingsState) {
         }
     }
     val locationContract = ActivityResultContracts.RequestMultiplePermissions()
-    val locationError = stringResource(R.string.settings_location_gps_error)
+    val locationError = stringResource(R.string.prefs_loc_gps_error)
     val locationPermCoarse = Manifest.permission.ACCESS_COARSE_LOCATION
     val locationPermFine = Manifest.permission.ACCESS_FINE_LOCATION
     val locationRequest = rememberLauncherForActivityResult(locationContract) { permissions ->
@@ -100,8 +117,7 @@ private fun SettingsScreen(uiState: SettingsState) {
     }
 
     // Position settings
-    val positionSettings = uiState.positionSettings
-    val stationPos = positionSettings.stationPos
+    val posSettings = uiState.positionSettings
     val setGpsPos = { locationRequest.launch(arrayOf(locationPermCoarse, locationPermFine)) }
     val setGeoPos = { lat: Double, lon: Double ->
         uiState.sendAction(SettingsAction.SetGeoPosition(lat, lon))
@@ -113,12 +129,12 @@ private fun SettingsScreen(uiState: SettingsState) {
     val posDialogState = rememberSaveable { mutableStateOf(false) }
     val showPosDialog = { posDialogState.value = posDialogState.value.not() }
     if (posDialogState.value) {
-        PositionDialog(stationPos.latitude, stationPos.longitude, showPosDialog, setGeoPos)
+        PositionDialog(posSettings.stationPos.latitude, posSettings.stationPos.longitude, showPosDialog, setGeoPos)
     }
     val locDialogState = rememberSaveable { mutableStateOf(false) }
     val showLocDialog = { locDialogState.value = locDialogState.value.not() }
     if (locDialogState.value) {
-        LocatorDialog(positionSettings.stationPos.qthLocator, showLocDialog, setQthPos)
+        LocatorDialog(posSettings.stationPos.qthLocator, showLocDialog, setQthPos)
     }
 
     // Data settings
@@ -146,32 +162,40 @@ private fun SettingsScreen(uiState: SettingsState) {
     val toggleSweep = { value: Boolean -> uiState.sendAction(SettingsAction.ToggleSweep(value)) }
     val toggleSensor = { value: Boolean -> uiState.sendAction(SettingsAction.ToggleSensor(value)) }
     val uriHandler = LocalUriHandler.current
+    val appUrl = stringResource(R.string.prefs_app_url)
+    val donateUrl = stringResource(R.string.prefs_donate_url)
+    val fdroidTitle = stringResource(R.string.prefs_fdroid_title)
+    val fdroidUrl = stringResource(R.string.prefs_fdroid_url)
+    val gitHubTitle = stringResource(R.string.prefs_github_title)
+    val gitHubUrl = stringResource(R.string.prefs_github_url)
+    val licenseUrl = stringResource(R.string.prefs_license_url)
+    val privacyUrl = stringResource(R.string.prefs_privacy_url)
 
     ScreenColumn(
         topBar = { isVerticalLayout ->
             if (isVerticalLayout) {
                 TopBar {
-                    TopCard(onClick = { uriHandler.openUri("https://play.google.com/store/apps/details?id=com.rtbishop.look4sat") }, version = uiState.appVersionName, modifier = Modifier.weight(1f))
-                    PrimaryIconCard(onClick = { uriHandler.openUri("https://ko-fi.com/rt_bishop") }, resId = R.drawable.ic_pound)
+                    TopCard(onClick = { uriHandler.openUri(appUrl) }, version = uiState.appVersionName, modifier = Modifier.weight(1f))
+                    PrimaryIconCard(onClick = { uriHandler.openUri(donateUrl) }, resId = R.drawable.ic_pound)
                 }
                 TopBar {
                     Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        BotCard(onClick = { uriHandler.openUri("https://www.gnu.org/licenses/gpl-3.0.html") }, R.drawable.ic_license, "Licence", modifier = Modifier.weight(1f))
-                        BotCard(onClick = { uriHandler.openUri("https://sites.google.com/view/look4sat-privacy-policy/home") }, R.drawable.ic_policy, "Privacy", modifier = Modifier.weight(1f))
+                        BotCard(onClick = { uriHandler.openUri(fdroidUrl) }, R.drawable.ic_fdroid, fdroidTitle, modifier = Modifier.weight(1f))
+                        BotCard(onClick = { uriHandler.openUri(gitHubUrl) }, R.drawable.ic_github, gitHubTitle, modifier = Modifier.weight(1f))
                     }
-                    IconCard(action = { uriHandler.openUri("https://f-droid.org/en/packages/com.rtbishop.look4sat/") }, resId = R.drawable.ic_fdroid)
-                    IconCard(action = { uriHandler.openUri("https://github.com/rt-bishop/Look4Sat/") }, resId = R.drawable.ic_github)
+                    IconCard(action = { uriHandler.openUri(licenseUrl) }, resId = R.drawable.ic_license)
+                    IconCard(action = { uriHandler.openUri(privacyUrl) }, resId = R.drawable.ic_policy)
                 }
             } else {
                 TopBar {
-                    PrimaryIconCard(onClick = { uriHandler.openUri("https://ko-fi.com/rt_bishop") }, resId = R.drawable.ic_pound)
-                    TopCard(onClick = { uriHandler.openUri("https://play.google.com/store/apps/details?id=com.rtbishop.look4sat") }, version = uiState.appVersionName, modifier = Modifier.weight(1f))
+                    PrimaryIconCard(onClick = { uriHandler.openUri(donateUrl) }, resId = R.drawable.ic_pound)
+                    TopCard(onClick = { uriHandler.openUri(appUrl) }, version = uiState.appVersionName, modifier = Modifier.weight(1f))
                     Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        BotCard(onClick = { uriHandler.openUri("https://www.gnu.org/licenses/gpl-3.0.html") }, R.drawable.ic_license, "Licence", modifier = Modifier.weight(1f))
-                        BotCard(onClick = { uriHandler.openUri("https://sites.google.com/view/look4sat-privacy-policy/home") }, R.drawable.ic_policy, "Privacy", modifier = Modifier.weight(1f))
+                        BotCard(onClick = { uriHandler.openUri(fdroidUrl) }, R.drawable.ic_fdroid, fdroidTitle, modifier = Modifier.weight(1f))
+                        BotCard(onClick = { uriHandler.openUri(gitHubUrl) }, R.drawable.ic_github, gitHubTitle, modifier = Modifier.weight(1f))
                     }
-                    IconCard(action = { uriHandler.openUri("https://f-droid.org/en/packages/com.rtbishop.look4sat/") }, resId = R.drawable.ic_fdroid)
-                    IconCard(action = { uriHandler.openUri("https://github.com/rt-bishop/Look4Sat/") }, resId = R.drawable.ic_github)
+                    IconCard(action = { uriHandler.openUri(licenseUrl) }, resId = R.drawable.ic_license)
+                    IconCard(action = { uriHandler.openUri(privacyUrl) }, resId = R.drawable.ic_policy)
                 }
             }
         }
@@ -183,27 +207,12 @@ private fun SettingsScreen(uiState: SettingsState) {
             modifier = Modifier.clip(MaterialTheme.shapes.medium)
         ) {
             item {
-                LocationCard(
-                    positionSettings,
-                    setGpsPos,
-                    showPosDialog,
-                    showLocDialog,
-                    dismissPos,
-                    uiState.sendSystemAction
-                )
+                LocationCard(posSettings, setGpsPos, showPosDialog, showLocDialog, dismissPos, uiState.sendSystemAction)
             }
             item { DataCard(dataSettings, updateFromWeb, updateFromFile, clearAllData) }
             item { NetworkOutputCard(rcSettings, setRotatorState, setRotatorAddress, setRotatorPort) }
             item { BluetoothOutputCard(rcSettings, setBluetoothState, setBluetoothAddress, setBluetoothFormat) }
-            item {
-                OtherCard(
-                    otherSettings,
-                    toggleUtc,
-                    toggleUpdate,
-                    toggleSweep,
-                    toggleSensor
-                )
-            }
+            item { OtherCard(otherSettings, toggleUtc, toggleUpdate, toggleSweep, toggleSensor) }
             item { CardCredits() }
         }
     }
@@ -233,7 +242,7 @@ private fun LocationCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stringResource(id = R.string.settings_location_title),
+                    text = stringResource(id = R.string.prefs_loc_title),
                     color = MaterialTheme.colorScheme.primary
                 )
                 UpdateIndicator(isUpdating = settings.isUpdating, Modifier.weight(1f))
@@ -241,40 +250,28 @@ private fun LocationCard(
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = setUpdateTime(updateTime = settings.stationPos.timestamp))
             Spacer(modifier = Modifier.height(2.dp))
-            Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    text = "Lat: ${settings.stationPos.latitude}°",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Start
-                )
-                Text(
-                    text = "Lon: ${settings.stationPos.longitude}°",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "Qth: ${settings.stationPos.qthLocator}",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
-                )
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text(text = "Lat: ${settings.stationPos.latitude}°")
+                Text(text = "Lon: ${settings.stationPos.longitude}°")
+                Text(text = "Qth: ${settings.stationPos.qthLocator}")
             }
             Spacer(modifier = Modifier.height(1.dp))
             Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                 CardButton(
                     onClick = setGpsPos,
-                    text = stringResource(id = R.string.settings_station_gps),
+                    text = stringResource(id = R.string.prefs_loc_gps_title),
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 CardButton(
                     onClick = showPosDialog,
-                    text = stringResource(id = R.string.settings_station_manual),
+                    text = stringResource(id = R.string.prefs_loc_input_title),
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 CardButton(
                     onClick = showLocDialog,
-                    text = stringResource(id = R.string.settings_station_qth),
+                    text = stringResource(id = R.string.prefs_loc_qth_title),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -310,7 +307,7 @@ private fun DataCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stringResource(id = R.string.settings_data_title),
+                    text = stringResource(id = R.string.prefs_data_title),
                     color = MaterialTheme.colorScheme.primary
                 )
                 UpdateIndicator(isUpdating = settings.isUpdating, Modifier.weight(1f))
@@ -318,28 +315,27 @@ private fun DataCard(
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = setUpdateTime(updateTime = settings.timestamp))
             Spacer(modifier = Modifier.height(2.dp))
-            Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Satellites: ${settings.entriesTotal}")
-                Spacer(modifier = Modifier.weight(1f))
-                Text(text = "Transceivers: ${settings.radiosTotal}")
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text(text = stringResource(R.string.prefs_data_entries, settings.entriesTotal))
+                Text(text = stringResource(R.string.prefs_data_radios, settings.radiosTotal))
             }
             Spacer(modifier = Modifier.height(1.dp))
             Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                 CardButton(
                     onClick = { updateFromWeb() },
-                    text = stringResource(id = R.string.settings_data_online),
+                    text = stringResource(id = R.string.prefs_data_update),
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 CardButton(
                     onClick = { updateFromFile() },
-                    text = stringResource(id = R.string.settings_data_import),
+                    text = stringResource(id = R.string.prefs_data_import),
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 CardButton(
                     onClick = { clearAllData() },
-                    text = stringResource(id = R.string.settings_data_clear),
+                    text = stringResource(id = R.string.prefs_data_clear),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -372,7 +368,7 @@ private fun NetworkOutputCard(
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
             Text(
-                text = stringResource(id = R.string.settings_remote_title),
+                text = stringResource(id = R.string.prefs_net_title),
                 color = MaterialTheme.colorScheme.primary
             )
             Row(
@@ -380,7 +376,7 @@ private fun NetworkOutputCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(R.string.settings_remote_switch))
+                Text(text = stringResource(R.string.prefs_net_switch))
                 Switch(checked = settings.rotatorState, onCheckedChange = { setRotatorState(it) })
             }
             Row(
@@ -391,7 +387,7 @@ private fun NetworkOutputCard(
                 OutlinedTextField(
                     value = settings.rotatorAddress,
                     singleLine = true,
-                    label = { Text(text = stringResource(R.string.settings_remote_ip_hint)) },
+                    label = { Text(text = stringResource(R.string.prefs_net_ip_hint)) },
                     onValueChange = { setRotatorAddress(it) },
                     modifier = Modifier.weight(1.5f),
                     enabled = settings.rotatorState
@@ -399,7 +395,7 @@ private fun NetworkOutputCard(
                 OutlinedTextField(
                     value = settings.rotatorPort,
                     onValueChange = { setRotatorPort(it) },
-                    label = { Text(text = stringResource(R.string.settings_remote_port_hint)) },
+                    label = { Text(text = stringResource(R.string.prefs_net_port_hint)) },
                     singleLine = true,
                     modifier = Modifier.weight(1f),
                     enabled = settings.rotatorState
@@ -435,7 +431,7 @@ private fun BluetoothOutputCard(
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
             Text(
-                text = stringResource(id = R.string.settings_BTremote_title),
+                text = stringResource(id = R.string.prefs_bt_title),
                 color = MaterialTheme.colorScheme.primary
             )
             Row(
@@ -443,7 +439,7 @@ private fun BluetoothOutputCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(R.string.settings_BTremote_switch))
+                Text(text = stringResource(R.string.prefs_bt_switch))
                 Switch(checked = settings.bluetoothState, onCheckedChange = { setBluetoothState(it) })
             }
             Row(
@@ -454,7 +450,7 @@ private fun BluetoothOutputCard(
                 OutlinedTextField(
                     value = settings.bluetoothAddress,
                     singleLine = true,
-                    label = { Text(text = stringResource(R.string.settings_BTremote_device_hint)) },
+                    label = { Text(text = stringResource(R.string.prefs_bt_device_hint)) },
                     onValueChange = { setBluetoothAddress(it) },
                     modifier = Modifier.weight(1.5f),
                     enabled = settings.bluetoothState
@@ -462,7 +458,7 @@ private fun BluetoothOutputCard(
                 OutlinedTextField(
                     value = settings.bluetoothFormat,
                     onValueChange = { setBluetoothFormat(it) },
-                    label = { Text(text = stringResource(R.string.settings_BTremote_output_hint)) },
+                    label = { Text(text = stringResource(R.string.prefs_bt_output_hint)) },
                     singleLine = true,
                     modifier = Modifier.weight(1f),
                     enabled = settings.bluetoothState
@@ -496,14 +492,18 @@ private fun OtherCard(
     toggleSweep: (Boolean) -> Unit,
     toggleSensor: (Boolean) -> Unit
 ) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth().height(220.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+            Text(
+                text = stringResource(id = R.string.prefs_other_title),
+                color = MaterialTheme.colorScheme.primary
+            )
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(id = R.string.settings_other_switch_utc))
+                Text(text = stringResource(id = R.string.prefs_other_switch_utc))
                 Switch(checked = settings.stateOfUtc, onCheckedChange = { toggleUtc(it) })
             }
             Row(
@@ -511,7 +511,7 @@ private fun OtherCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(id = R.string.settings_other_switch_update))
+                Text(text = stringResource(id = R.string.prefs_other_switch_update))
                 Switch(checked = settings.stateOfAutoUpdate, onCheckedChange = { toggleUpdate(it) })
             }
             Row(
@@ -519,7 +519,7 @@ private fun OtherCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(id = R.string.settings_other_switch_sweep))
+                Text(text = stringResource(id = R.string.prefs_other_switch_sweep))
                 Switch(checked = settings.stateOfSweep, onCheckedChange = { toggleSweep(it) })
             }
             Row(
@@ -527,7 +527,7 @@ private fun OtherCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(id = R.string.settings_other_switch_sensors))
+                Text(text = stringResource(id = R.string.prefs_other_switch_sensors))
                 Switch(checked = settings.stateOfSensors, onCheckedChange = { toggleSensor(it) })
             }
         }
@@ -537,12 +537,12 @@ private fun OtherCard(
 @Composable
 private fun setUpdateTime(updateTime: Long): String {
     val updateDate = if (updateTime != 0L) {
-        val timePattern = stringResource(id = R.string.settings_last_updated_pattern)
+        val timePattern = stringResource(id = R.string.prefs_updated_time)
         SimpleDateFormat(timePattern, Locale.getDefault()).format(Date(updateTime))
     } else {
-        stringResource(id = R.string.passes_placeholder)
+        stringResource(id = R.string.pass_time_placeholder)
     }
-    return stringResource(id = R.string.settings_data_update, updateDate)
+    return stringResource(id = R.string.prefs_updated_title, updateDate)
 }
 
 @Composable
@@ -562,29 +562,21 @@ private fun CardCreditsPreview() = MainTheme { CardCredits() }
 
 @Composable
 private fun CardCredits(modifier: Modifier = Modifier) {
-    ElevatedCard(modifier = modifier.fillMaxWidth()) {
+    ElevatedCard(modifier = modifier.fillMaxWidth().height(220.dp)) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxHeight()
         ) {
             Text(
-                text = stringResource(id = R.string.settings_outro_title),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = modifier.padding(6.dp)
+                text = stringResource(id = R.string.prefs_outro_title),
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = stringResource(
-                    id = R.string.settings_outro_thanks
-                ), fontSize = 16.sp, textAlign = TextAlign.Center
+                text = stringResource(id = R.string.prefs_outro_thanks)
             )
             Text(
-                text = stringResource(id = R.string.settings_outro_license),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = modifier.padding(6.dp)
+                text = stringResource(id = R.string.prefs_outro_license),
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -606,7 +598,7 @@ private fun TopCard(onClick: () -> Unit, modifier: Modifier = Modifier, version:
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "Look4Sat v$version",
+                text = stringResource(R.string.prefs_app_title, version),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
