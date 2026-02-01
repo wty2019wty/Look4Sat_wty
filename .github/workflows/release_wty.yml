@@ -1,0 +1,83 @@
+name: release wty
+
+on:
+  push:
+    tags:
+      - v** # 标签推送触发，匹配v开头的标签
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v4.0.1)'
+        required: true
+        default: 'v4.0.1'
+        type: string
+
+env:
+  # 核心修改1：统一版本号变量，标签推送用原标签名，手动触发用输入的version
+  TAG_NAME: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.version }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Assemble Artifacts
+        run: |
+          ./gradlew assembleRelease
+          ./gradlew bundleRelease
+
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_apk
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.KEY_STORE }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "36.0.0"
+
+      - name: Sign Bundle
+        uses: r0adkll/sign-android-release@v1
+        id: sign_bundle
+        with:
+          releaseDirectory: app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEY_STORE }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "36.0.0"
+
+      - name: Rename Artifacts
+        run: |
+          # 核心修改2：重命名产物，拼接TAG_NAME版本号到文件名
+          mv ${{steps.sign_apk.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat-${TAG_NAME}.apk
+          mv ${{steps.sign_bundle.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat-${TAG_NAME}.aab
+
+      - name: Create Release and Upload Artifacts
+        run: |
+          # 核心修改3：统一用TAG_NAME作为Release标签/标题，上传带版本号的产物
+          gh release create $TAG_NAME --title="$TAG_NAME" --generate-notes
+          # 上传带版本号的APK
+          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat-${TAG_NAME}.apk
+          # 可选：同时上传带版本号的AAB（建议保留，适配应用商店发布）
+          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat-${TAG_NAME}.aab
