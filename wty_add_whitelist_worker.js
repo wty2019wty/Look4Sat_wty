@@ -1,4 +1,4 @@
-// 在这里配置您的域名白名单
+// 在这里配置您的域名白名单 
 // const whitelist = ['r4uab.ru', 'amsat.org', 'satnogs.org', 'celestrak.org', 'mmccants.org', 'mt0.google.com', 'mt1.google.com', 'mt2.google.com', 'mt3.google.com'];
 const whitelist = ['r4uab.ru', 'amsat.org', 'satnogs.org', 'celestrak.org', 'mmccants.org'];
 addEventListener('fetch', event => {
