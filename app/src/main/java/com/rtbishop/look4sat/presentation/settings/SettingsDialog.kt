@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.settings
 
 import androidx.compose.material3.OutlinedTextField
@@ -21,12 +38,12 @@ private fun PositionDialogPreview() {
 fun PositionDialog(lat: Double, lon: Double, dismiss: () -> Unit, save: (Double, Double) -> Unit) {
     val latValue = rememberSaveable { mutableStateOf(lat.toString()) }
     val lonValue = rememberSaveable { mutableStateOf(lon.toString()) }
-    val titleText = stringResource(id = R.string.position_title)
+    val titleText = stringResource(id = R.string.prefs_station_title)
     val onAccept = { saveValues(latValue.value, lonValue.value, save).also { dismiss() } }
     SharedDialog(title = titleText, onCancel = dismiss, onAccept = onAccept) {
-        Text(text = stringResource(id = R.string.position_lat_text))
+        Text(text = stringResource(id = R.string.prefs_station_lat_text))
         OutlinedTextField(value = latValue.value, onValueChange = { latValue.value = it })
-        Text(text = stringResource(id = R.string.position_lon_text))
+        Text(text = stringResource(id = R.string.prefs_station_lon_text))
         OutlinedTextField(value = lonValue.value, onValueChange = { lonValue.value = it })
     }
 }
@@ -49,8 +66,8 @@ private fun LocatorDialogPreview() {
 fun LocatorDialog(qthLocator: String, dismiss: () -> Unit, save: (String) -> Unit) {
     val locator = rememberSaveable { mutableStateOf(qthLocator) }
     val onAccept = { save(locator.value).also { dismiss() } }
-    SharedDialog(title = "Radios", onCancel = dismiss, onAccept = onAccept) {
-        Text(text = stringResource(id = R.string.locator_text))
+    SharedDialog(title = stringResource(R.string.prefs_locator_title), onCancel = dismiss, onAccept = onAccept) {
+        Text(text = stringResource(id = R.string.prefs_locator_text))
         OutlinedTextField(value = locator.value, onValueChange = { locator.value = it })
     }
 }

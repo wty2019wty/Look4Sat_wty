@@ -1,6 +1,6 @@
 /*
  * Look4Sat. Amateur radio satellite tracker and pass predictor.
- * Copyright (C) 2019-2022 Arty Bishop (bishop.arty@gmail.com)
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -73,16 +74,16 @@ fun PassesDialog(hours: Int, elevation: Double, cancel: () -> Unit, accept: (Int
     val onAccept = {
         accept(hoursValue.intValue, elevationValueNew.doubleValue).also { cancel() }
     }
-    SharedDialog(title = "Passes", onCancel = cancel, onAccept = onAccept) {
+    SharedDialog(title = stringResource(R.string.pass_filter_title), onCancel = cancel, onAccept = onAccept) {
         SliderRow(
-            title = "Show passes above",
+            title = stringResource(R.string.pass_filter_elev),
             value = elevationValueNew.doubleValue,
             valuePostfix = "°",
             valueResId = R.drawable.ic_elevation,
             valueRange = 0f..60f
         ) { elevationValueNew.doubleValue = it.toDouble() }
         SliderRow(
-            title = "Show passes within",
+            title = stringResource(R.string.pass_filter_hours),
             value = hoursValue.intValue.toDouble(),
             valuePostfix = "h",
             valueResId = R.drawable.ic_clock,
@@ -145,7 +146,7 @@ fun RadiosDialog(modes: List<String>, cancel: () -> Unit, accept: (List<String>)
         if (selected.contains(mode)) selected.remove(mode) else selected.add(mode)
     }
     val onAccept = { accept(selected.toList()).also { cancel() } }
-    SharedDialog(title = "Radios", onCancel = cancel, onAccept = onAccept) {
+    SharedDialog(title = stringResource(R.string.pass_modes_title), onCancel = cancel, onAccept = onAccept) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(240.dp),
             modifier = Modifier

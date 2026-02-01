@@ -1,6 +1,6 @@
 /*
  * Look4Sat. Amateur radio satellite tracker and pass predictor.
- * Copyright (C) 2019-2022 Arty Bishop (bishop.arty@gmail.com)
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -152,13 +152,13 @@ class SettingsViewModel(
 
     private fun setGpsPosition() {
         if (settingsRepo.setStationPosition()) {
-            val messageResId = R.string.location_success
+            val messageResId = R.string.prefs_loc_success
             val newPosSettings = _uiState.value.positionSettings.copy(
                 isUpdating = true, messageResId = messageResId
             )
             _uiState.update { it.copy(positionSettings = newPosSettings) }
         } else {
-            val errorResId = R.string.location_gps_error
+            val errorResId = R.string.prefs_loc_gps_error
             val newPosSettings = _uiState.value.positionSettings.copy(
                 isUpdating = false, messageResId = errorResId
             )
@@ -168,13 +168,13 @@ class SettingsViewModel(
 
     private fun setGeoPosition(latitude: Double, longitude: Double) {
         if (settingsRepo.setStationPosition(latitude, longitude, 0.0)) {
-            val messageResId = R.string.location_success
+            val messageResId = R.string.prefs_loc_success
             val newPosSettings = _uiState.value.positionSettings.copy(
                 isUpdating = false, messageResId = messageResId
             )
             _uiState.update { it.copy(positionSettings = newPosSettings) }
         } else {
-            val errorResId = R.string.location_manual_error
+            val errorResId = R.string.prefs_loc_input_error
             val newPosSettings = _uiState.value.positionSettings.copy(
                 isUpdating = false, messageResId = errorResId
             )
@@ -184,13 +184,13 @@ class SettingsViewModel(
 
     private fun setQthPosition(locator: String) {
         if (settingsRepo.setStationPosition(locator)) {
-            val messageResId = R.string.location_success
+            val messageResId = R.string.prefs_loc_success
             val newPosSettings = _uiState.value.positionSettings.copy(
                 isUpdating = false, messageResId = messageResId
             )
             _uiState.update { it.copy(positionSettings = newPosSettings) }
         } else {
-            val errorResId = R.string.location_qth_error
+            val errorResId = R.string.prefs_loc_qth_error
             val newPosSettings = _uiState.value.positionSettings.copy(
                 isUpdating = false, messageResId = errorResId
             )

@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.radar
 
 import androidx.compose.animation.core.LinearEasing
@@ -12,10 +29,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +47,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +64,7 @@ import com.rtbishop.look4sat.domain.model.SatRadio
 import com.rtbishop.look4sat.domain.utility.toDegrees
 import com.rtbishop.look4sat.presentation.MainTheme
 import com.rtbishop.look4sat.presentation.Screen
+import com.rtbishop.look4sat.presentation.common.EmptyListCard
 import com.rtbishop.look4sat.presentation.common.IconCard
 import com.rtbishop.look4sat.presentation.common.NextPassRow
 import com.rtbishop.look4sat.presentation.common.TimerRow
@@ -99,7 +117,9 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
             ElevatedCard(modifier = Modifier.weight(1f)) {
                 Box(contentAlignment = Alignment.Center) {
                     if (uiState.orbitalPos == null) {
-                        ElevatedCard(modifier = Modifier.fillMaxSize()) {}
+                        ElevatedCard(modifier = Modifier.fillMaxSize()) {
+                            EmptyListCard(message = "")
+                        }
                     }
                     uiState.orbitalPos?.let { position ->
                         RadarViewCompose(
@@ -152,23 +172,20 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
             }
             ElevatedCard(modifier = Modifier.weight(1f)) {
                 if (uiState.transmitters.isEmpty()) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_radios),
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "This satellite doesn't have any known transcievers...",
-                            textAlign = TextAlign.Center,
-                            fontSize = 18.sp,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(24.dp),
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Text(text = """¯\_(ツ)_/¯""", fontSize = 32.sp)
+                            Text(text = stringResource(R.string.empty_list_message), fontSize = 21.sp)
+                            Text(
+                                text = stringResource(R.string.radar_no_data),
+                                fontSize = 18.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -184,7 +201,9 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
                 ElevatedCard(modifier = Modifier.weight(1f)) {
                     Box(contentAlignment = Alignment.Center) {
                         if (uiState.orbitalPos == null) {
-                            ElevatedCard(modifier = Modifier.fillMaxSize()) {}
+                            ElevatedCard(modifier = Modifier.fillMaxSize()) {
+                                EmptyListCard(message = "")
+                            }
                         }
                         uiState.orbitalPos?.let { position ->
                             RadarViewCompose(
@@ -237,23 +256,20 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
                 }
                 ElevatedCard(modifier = Modifier.weight(1f)) {
                     if (uiState.transmitters.isEmpty()) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_radios),
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "This satellite doesn't have any known transcievers...",
-                                textAlign = TextAlign.Center,
-                                fontSize = 18.sp,
-                                modifier = Modifier.padding(16.dp)
-                            )
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(24.dp),
+                                modifier = Modifier.padding(32.dp)
+                            ) {
+                                Text(text = """¯\_(ツ)_/¯""", fontSize = 32.sp)
+                                Text(text = stringResource(R.string.empty_list_message), fontSize = 21.sp)
+                                Text(
+                                    text = stringResource(R.string.radar_no_data),
+                                    fontSize = 18.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     } else {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -333,7 +349,7 @@ private fun EclipsedIndicator() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Eclipsed!",
+            text = stringResource(R.string.radar_eclipsed),
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.background,
@@ -387,12 +403,13 @@ private fun FrequencyRow(radio: SatRadio, isDownlink: Boolean, modifier: Modifie
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.fillMaxWidth()) {
         val rotateMod = Modifier.rotate(if (isDownlink) 90f else -90f)
         val weightMod = Modifier.weight(1f)
+        val desc = if (isDownlink) stringResource(R.string.radar_downlink) else stringResource(R.string.radar_uplink)
         Text(
             text = if (isDownlink) "D:" else "U:",
             textAlign = TextAlign.Center,
             fontSize = 18.sp,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = modifier.size(width = 24.dp, height = 24.dp)
+            modifier = modifier.size(width = 24.dp, height = 24.dp).semantics { contentDescription = desc }
         )
         FrequencyText(if (isDownlink) radio.downlinkLow else radio.uplinkLow, weightMod)
         Text(
@@ -407,7 +424,7 @@ private fun FrequencyRow(radio: SatRadio, isDownlink: Boolean, modifier: Modifie
         Icon(
             painter = painterResource(id = R.drawable.ic_arrow),
             tint = MaterialTheme.colorScheme.onSurface,
-            contentDescription = if (isDownlink) "Downlink" else "Uplink",
+            contentDescription = null,
             modifier = rotateMod.size(width = 24.dp, height = 24.dp)
         )
     }
@@ -415,10 +432,10 @@ private fun FrequencyRow(radio: SatRadio, isDownlink: Boolean, modifier: Modifie
 
 @Composable
 private fun FrequencyText(frequency: Long?, modifier: Modifier = Modifier) {
-    val noLinkText = stringResource(R.string.radio_no_link)
+    val noLinkText = stringResource(R.string.radar_no_link)
     val freqValue = frequency?.let { it / 1000000f }
     Text(
-        text = freqValue?.let { stringResource(id = R.string.radio_link_low, it) } ?: noLinkText,
+        text = freqValue?.let { stringResource(id = R.string.radar_link_low, it) } ?: noLinkText,
         textAlign = TextAlign.Center,
         fontSize = 21.sp,
         fontWeight = FontWeight.Bold,

@@ -1,4 +1,21 @@
-package com.rtbishop.look4sat
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package com.rtbishop.look4sat.data.injection
 
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -33,14 +50,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
-import org.osmdroid.config.Configuration
 
 class MainContainer(private val context: Context) {
 
     private val localSource = provideLocalSource()
-    private val mainHandler = CoroutineExceptionHandler { _, error ->
-        println("MainHandler: $error")
-    }
+    private val mainHandler = CoroutineExceptionHandler { _, error -> println("MainHandler: $error") }
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default + mainHandler)
     val settingsRepo = provideSettingsRepo()
     val selectionRepo = provideSelectionRepo()
@@ -48,26 +62,19 @@ class MainContainer(private val context: Context) {
     val databaseRepo = provideDatabaseRepo()
 
     fun provideAppVersionName(): String {
-        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        return packageInfo.versionName ?: "4.0.0"
+        return context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "4.0.0"
     }
 
-    fun provideAddToCalendar(): IAddToCalendar {
-        return AddToCalendar(context)
-    }
+    fun provideAddToCalendar(): IAddToCalendar = AddToCalendar(context)
 
-    fun provideShowToast(): IShowToast {
-        return ShowToast(context)
-    }
+    fun provideShowToast(): IShowToast = ShowToast(context)
 
     fun provideBluetoothReporter(): BluetoothReporter {
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         return BluetoothReporter(manager, CoroutineScope(Dispatchers.IO))
     }
 
-    fun provideNetworkReporter(): NetworkReporter {
-        return NetworkReporter(CoroutineScope(Dispatchers.IO))
-    }
+    fun provideNetworkReporter(): NetworkReporter = NetworkReporter(CoroutineScope(Dispatchers.IO))
 
     fun provideSensorsRepo(): ISensorsRepo {
         val manager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -83,7 +90,7 @@ class MainContainer(private val context: Context) {
     }
 
     private fun provideLocalSource(): ILocalSource {
-        val builder = Room.databaseBuilder(context, Look4SatDb::class.java, "Look4SatDBv313")
+        val builder = Room.databaseBuilder(context, Look4SatDb::class.java, "Look4SatDBv400")
         val database = builder.apply { fallbackToDestructiveMigration(false) }.build()
         return LocalSource(database.look4SatDao())
     }
@@ -104,9 +111,6 @@ class MainContainer(private val context: Context) {
         val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val appPrefsFileName = "${context.packageName}_preferences"
         val appPreferences = context.getSharedPreferences(appPrefsFileName, Context.MODE_PRIVATE)
-        val mapPrefsFileName = "${context.packageName}_osmdroid"
-        val mapPreferences = context.getSharedPreferences(mapPrefsFileName, Context.MODE_PRIVATE)
-        Configuration.getInstance().load(context, mapPreferences)
         return SettingsRepo(manager, appPreferences)
     }
 }

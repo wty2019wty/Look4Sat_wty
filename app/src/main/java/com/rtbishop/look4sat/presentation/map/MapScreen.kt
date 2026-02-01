@@ -1,3 +1,20 @@
+/*
+ * Look4Sat. Amateur radio satellite tracker and pass predictor.
+ * Copyright (C) 2019-2026 Arty Bishop and contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.rtbishop.look4sat.presentation.map
 
 import android.graphics.Canvas
@@ -144,7 +161,7 @@ private fun MapDataCard(data: MapData) {
     val textColor = MaterialTheme.colorScheme.primary
     val cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
-        Text(text = "© OpenStreetMap contributors", fontSize = 14.sp)
+        Text(text = stringResource(R.string.map_copyright), fontSize = 14.sp)
         Card(colors = cardColors) {
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
@@ -172,7 +189,7 @@ private fun MapDataCard(data: MapData) {
 private fun MapDataCards(data: MapData) {
     val cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     val paddingMod = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).width(160.dp)
-    val osmText = "© OpenStreetMap contributors"
+    val osmText = stringResource(R.string.map_copyright)
     val textColor = MaterialTheme.colorScheme.primary
     Box(modifier = Modifier.fillMaxSize()) {
         Card(colors = cardColors, modifier = Modifier.align(Alignment.TopStart)) {
