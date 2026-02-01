@@ -1,16 +1,17 @@
-name: release
+name: release wty
 
 on:
   push:
     tags:
       - v**
-  workflow_dispatch:
+   workflow_dispatch:
     inputs:
       version:
         description: 'Release version (e.g., v4.0.1)'
         required: true
         default: 'v4.0.1'
         type: string
+
 env:
   TAG_NAME: ${{ github.ref_name }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
