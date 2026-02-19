@@ -23,7 +23,6 @@ object Sources {
         "All" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=csv",
         "Amateur" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=csv",
         "Brightest" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=csv",
-        "Classified" to "https://tle.486520.xyz/https://www.mmccants.org/tles/classfd.zip",
         "Cubesat" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=csv",
         "Education" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=education&FORMAT=csv",
         "Engineer" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=engineering&FORMAT=csv",
@@ -32,12 +31,10 @@ object Sources {
         "GNSS" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=csv",
         "Intelsat" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=intelsat&FORMAT=csv",
         "Iridium" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=iridium-NEXT&FORMAT=csv",
-        "McCants" to "https://tle.486520.xyz/https://www.mmccants.org/tles/inttles.zip",
         "Military" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=military&FORMAT=csv",
         "New" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=csv",
         "OneWeb" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=oneweb&FORMAT=csv",
         "Orbcomm" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=orbcomm&FORMAT=csv",
-        "R4UAB" to "https://tle.486520.xyz/https://r4uab.ru/satonline.txt",
         "Resource" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=resource&FORMAT=csv",
         "SatNOGS" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=satnogs&FORMAT=csv",
         "Science" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=science&FORMAT=csv",
@@ -47,6 +44,9 @@ object Sources {
         "Weather" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=csv",
         "X-Comm" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=x-comm&FORMAT=csv",
         "Amsat" to "https://tle.486520.xyz/https://amsat.org/tle/current/nasabare.txt",
+        "Classified" to "https://tle.486520.xyz/https://www.mmccants.org/tles/classfd.zip",
+        "McCants" to "https://tle.486520.xyz/https://www.mmccants.org/tles/inttles.zip",
+        "R4UAB" to "https://tle.486520.xyz/https://r4uab.ru/satonline.txt",
         "Other" to "" // key for sats filter
     )
 }
