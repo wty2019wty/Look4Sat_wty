@@ -121,11 +121,25 @@ class BluetoothReporter(
         }
     }
 
+
     override fun reportFrequency(format: String, frequency: Long, params: WithoutExtParams) {
         reporterScope.launch {
             if (!isConnected(BtService.FREQUENCY)) return@launch
             var buffer = format
                 .replace("\$FREQ", frequency.toString())
+                .replace("\\r", "\r")
+                .replace("\\n", "\n")
+                .replace("\\t", "\t")
+            write(BtService.FREQUENCY, buffer)
+        }
+    }
+
+    override fun reportFrequency(format: String, downlinkFreq: Long?, uplinkFreq: Long?, params: WithoutExtParams) {
+        reporterScope.launch {
+            if (!isConnected(BtService.FREQUENCY)) return@launch
+            var buffer = format
+                .replace("\$FREQU", uplinkFreq?.toString() ?: "")
+                .replace("\$FREQ", downlinkFreq?.toString() ?: "")
                 .replace("\\r", "\r")
                 .replace("\\n", "\n")
                 .replace("\\t", "\t")

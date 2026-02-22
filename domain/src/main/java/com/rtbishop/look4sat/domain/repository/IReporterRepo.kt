@@ -22,4 +22,8 @@ interface IReporterParams
 interface IReporterRepo<T : IReporterParams> {
     fun reportRotation(format: String, azimuth: Double, elevation: Double, params: T)
     fun reportFrequency(format: String, frequency: Long, params: T)
+    fun reportFrequency(format: String, downlinkFreq: Long?, uplinkFreq: Long?, params: T) {
+        // Default implementation for backward compatibility
+        downlinkFreq?.let { reportFrequency(format, it, params) }
+    }
 }

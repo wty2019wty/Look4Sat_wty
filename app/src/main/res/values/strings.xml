@@ -148,7 +148,7 @@
     <string name="prefs_net_frequency_switch">Enable frequency output</string>
     <string name="prefs_net_frequency_ip_hint">IP address</string>
     <string name="prefs_net_frequency_port_hint">Port</string>
-    <string name="prefs_net_frequency_format_hint">Format</string>
+    <string name="prefs_net_frequency_format_hint">Format ($FREQ, $FREQU)</string>
 
     <string name="prefs_bt_title">Bluetooth data output</string>
     <string name="prefs_bt_rotator_switch">Enable rotation output</string>
@@ -156,7 +156,7 @@
     <string name="prefs_bt_rotator_output_hint">Data format</string>
     <string name="prefs_bt_frequency_switch">Enable frequency output</string>
     <string name="prefs_bt_frequency_device_hint">Device id</string>
-    <string name="prefs_bt_frequency_output_hint">Data format</string>
+    <string name="prefs_bt_frequency_output_hint">Data format ($FREQ, $FREQU)</string>
     <string name="prefs_bt_perm_error">Check your bluetooth permission</string>
 
     <string name="prefs_other_title">Other settings</string>

@@ -33,6 +33,7 @@ data class RadarState(
     val transmitters: List<SatRadio>,
     val selectedTransmitterUuid: String?,
     val selectedFrequency: Long?,
+    val selectedUplinkFrequency: Long?,
     val sendAction: (RadarAction) -> Unit
 )
 

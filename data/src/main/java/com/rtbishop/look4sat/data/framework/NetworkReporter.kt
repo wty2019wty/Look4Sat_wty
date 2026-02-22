@@ -104,11 +104,25 @@ class NetworkReporter(private val reporterScope: CoroutineScope) : IReporterRepo
         }
     }
 
+
     override fun reportFrequency(format: String, frequency: Long, params: ExtendedParams) {
         reporterScope.launch {
             connect(NetworkService.FREQUENCY, params.server, params.port)
             if (!isConnected(NetworkService.FREQUENCY)) return@launch
             val command = format.replace("\$FREQ", frequency.toString())
+            write(NetworkService.FREQUENCY, command)
+        }
+    }
+
+
+    override fun reportFrequency(format: String, downlinkFreq: Long?, uplinkFreq: Long?, params: ExtendedParams) {
+        reporterScope.launch {
+            connect(NetworkService.FREQUENCY, params.server, params.port)
+            if (!isConnected(NetworkService.FREQUENCY)) return@launch
+            val command = format
+                .replace("\$FREQU", uplinkFreq?.toString() ?: "")
+                .replace("\$FREQ", downlinkFreq?.toString() ?: "")
+        //  println("NetworkReporter: Format='$format', DL='$downlinkFreq', UL='$uplinkFreq', Result='$command'")
             write(NetworkService.FREQUENCY, command)
         }
     }

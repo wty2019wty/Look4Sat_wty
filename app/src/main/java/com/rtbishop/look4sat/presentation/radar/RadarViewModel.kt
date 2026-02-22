@@ -70,6 +70,7 @@ class RadarViewModel(
             shouldUseCompass = settingsRepo.otherSettings.value.stateOfSensors,
             selectedTransmitterUuid = null,
             selectedFrequency = null,
+            selectedUplinkFrequency = null,
             transmitters = emptyList(),
             sendAction = ::handleAction,
         )
@@ -153,11 +154,13 @@ class RadarViewModel(
                 networkReporter.reportRotation(format, azimuth, elevation, ExtendedParams(server, port))
             }
             if (settingsRepo.rcSettings.value.frequencyState) {
-                _uiState.value.selectedFrequency?.let { freq ->
+                val downlinkFreq = _uiState.value.selectedFrequency
+                val uplinkFreq = _uiState.value.selectedUplinkFrequency
+                if (downlinkFreq != null || uplinkFreq != null) {
                     val server = settingsRepo.rcSettings.value.frequencyAddress
                     val port = settingsRepo.rcSettings.value.frequencyPort.toInt()
                     val format = settingsRepo.rcSettings.value.frequencyFormat
-                    networkReporter.reportFrequency(format,freq, ExtendedParams(server, port))
+                    networkReporter.reportFrequency(format, downlinkFreq, uplinkFreq, ExtendedParams(server, port))
                 }
             }
         }
@@ -181,9 +184,10 @@ class RadarViewModel(
                 val btFrequencyDevice = settingsRepo.rcSettings.value.bluetoothFrequencyAddress
                 if (bluetoothReporter.isConnected(BtService.FREQUENCY)) {
                     val format = settingsRepo.rcSettings.value.bluetoothFrequencyFormat
-                    val frequency = _uiState.value.selectedFrequency
-                    frequency?.let { freq ->
-                        bluetoothReporter.reportFrequency(format, freq, WithoutExtParams(0))
+                    val downlinkFreq = _uiState.value.selectedFrequency
+                    val uplinkFreq = _uiState.value.selectedUplinkFrequency
+                    if (downlinkFreq != null || uplinkFreq != null) {
+                        bluetoothReporter.reportFrequency(format, downlinkFreq, uplinkFreq, WithoutExtParams(0))
                     }
                 } else if (!bluetoothReporter.isConnecting(BtService.FREQUENCY)) {
 //                    Log.i("BTReporter", "BTReporter (frequency): Attempting to connect...")
@@ -200,11 +204,13 @@ class RadarViewModel(
                 return@update state.copy(
                     transmitters = transmitters,
                     selectedTransmitterUuid = null,
-                    selectedFrequency = null
+                    selectedFrequency = null,
+                    selectedUplinkFrequency = null
                 )
             }
             val selectedUuid = state.selectedTransmitterUuid ?: transmitters.firstOrNull()?.uuid
             val selectedRadio = transmitters.firstOrNull { it.uuid == selectedUuid }
+            android.util.Log.d("RadarViewModel", "Selected Radio: $selectedRadio")
             val freq = selectedRadio?.let { radio ->
                 val low = radio.downlinkLow
                 val high = radio.downlinkHigh
@@ -216,10 +222,22 @@ class RadarViewModel(
                     else -> null
                 }
             }
+            val uplinkFreq = selectedRadio?.let { radio ->
+                val low = radio.uplinkLow
+                val high = radio.uplinkHigh
+                when {
+                    low != null && high != null ->
+                        (low + high) / 2
+                    low != null ->
+                        low
+                    else -> null
+                }
+            }
             state.copy(
                 transmitters = transmitters,
                 selectedTransmitterUuid = selectedUuid,
-                selectedFrequency = freq
+                selectedFrequency = freq,
+                selectedUplinkFrequency = uplinkFreq
             )
         }
     }
