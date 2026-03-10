@@ -104,7 +104,7 @@ internal fun Project.configureAndroidApp(commonExtension: ApplicationExtension) 
         namespace = "com.rtbishop.look4sat"
         compileSdk = libs.versions.compileSdk.get().toInt()
         defaultConfig {
-            applicationId = "com.rtbishop.look4sat"
+            applicationId = "com.rtbishop_wty.look4sat"
             minSdk = libs.versions.minSdk.get().toInt()
             versionCode = libs.versions.appVersionCode.get().toInt()
             versionName = libs.versions.appVersionName.get()
