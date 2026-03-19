@@ -1,4 +1,5 @@
 # Look4Sat: Satellite tracker
+[![Hits](https://hits.sh/github.com/wty2019wty/Look4Sat_wty.svg?style=plastic)](https://hits.sh/github.com/wty2019wty/Look4Sat_wty/)
 
 
 # [cf 反代加速worker.js](/wty_add_whitelist_worker.js)
