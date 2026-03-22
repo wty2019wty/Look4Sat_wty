@@ -50,7 +50,7 @@ internal fun Project.setupAndroidApplication() {
         namespace = libs.versions.packageName.get()
         compileSdk = libs.versions.compileSdk.get().toInt()
         defaultConfig {
-            applicationId = libs.versions.packageName.get()
+            applicationId = libs.versions.wtypackageName.get()
             minSdk = libs.versions.minSdk.get().toInt()
             versionCode = libs.versions.appVersionCode.get().toInt()
             versionName = libs.versions.appVersionName.get()

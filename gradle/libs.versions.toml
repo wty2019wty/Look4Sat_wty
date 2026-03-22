@@ -1,8 +1,8 @@
 [versions]
 #noinspection UnusedVersionCatalogEntry
-appVersionCode = "410"
+appVersionCode = "411"
 #noinspection UnusedVersionCatalogEntry
-appVersionName = "4.1.0"
+appVersionName = "4.1.1"
 #noinspection UnusedVersionCatalogEntry
 compileSdk = "36"
 #noinspection UnusedVersionCatalogEntry
@@ -10,7 +10,8 @@ minSdk = "24"
 #noinspection UnusedVersionCatalogEntry
 jdkVersion = "17"
 #noinspection UnusedVersionCatalogEntry
-packageName = "com.rtbishop_wty.look4sat"
+packageName = "com.rtbishop.look4sat"
+wtypackageName = "com.rtbishop_wty.look4sat"
 
 android-gradle-plugin = "9.0.1"
 google-ksp = "2.3.6"
