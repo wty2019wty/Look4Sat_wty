@@ -47,7 +47,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.res.painterResource
@@ -116,12 +115,12 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
                 TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isCurrentTimeAos)
                 IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
             }
-            TopBar { NextPassRow(pass = upcomingPass) }
+            TopBar { NextPassRow(pass = upcomingPass, isUtc = uiState.isUtc) }
         } else {
             TopBar {
                 IconCard(action = navigateUp, resId = R.drawable.ic_back)
                 TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isCurrentTimeAos)
-                NextPassRow(pass = upcomingPass, modifier = Modifier.weight(1f))
+                NextPassRow(pass = upcomingPass, modifier = Modifier.weight(1f), isUtc = uiState.isUtc)
                 IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
             }
         }
@@ -139,7 +138,27 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
 
 @Composable
 private fun RadarCard(uiState: RadarState, modifier: Modifier = Modifier) {
-    ElevatedCard(modifier = modifier) {
+    val isEclipsed = uiState.orbitalPos?.eclipsed == true
+    val borderModifier = if (isEclipsed) {
+        val infiniteTransition = rememberInfiniteTransition(label = "eclipsedBorder")
+        val borderAlpha by infiniteTransition.animateFloat(
+            initialValue = 1.0f,
+            targetValue = 0.0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1000, delayMillis = 25, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "eclipsedBorderAlpha"
+        )
+        Modifier.border(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = borderAlpha),
+            shape = MaterialTheme.shapes.medium
+        )
+    } else {
+        Modifier
+    }
+    ElevatedCard(modifier = modifier.then(borderModifier)) {
         Box(contentAlignment = Alignment.Center) {
             val position = uiState.orbitalPos
             if (position == null) {
@@ -230,20 +249,15 @@ private fun TransmittersCard(uiState: RadarState, modifier: Modifier = Modifier)
         if (uiState.transmitters.isEmpty()) {
             EmptyTransmittersContent()
         } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                TransmittersList(
-                    transmitters = uiState.transmitters,
-                    selectedUuid = uiState.selectedTransmitterUuid,
-                    onSelect = { uuid ->
-                        if (uiState.selectedTransmitterUuid != null) {
-                            uiState.sendAction(RadarAction.SelectTransmitter(uuid))
-                        }
+            TransmittersList(
+                transmitters = uiState.transmitters,
+                selectedUuid = uiState.selectedTransmitterUuid,
+                onSelect = { uuid ->
+                    if (uiState.selectedTransmitterUuid != null) {
+                        uiState.sendAction(RadarAction.SelectTransmitter(uuid))
                     }
-                )
-                if (uiState.orbitalPos?.eclipsed == true) {
-                    EclipsedIndicator()
                 }
-            }
+            )
         }
     }
 }
@@ -299,38 +313,6 @@ private fun TransmitterItemPreview() {
     MainTheme { TransmitterItem(transmitter, isClickable = true, isSelected = true, onClick = {}) }
 }
 
-@Composable
-private fun EclipsedIndicator() {
-    val bgColor = MaterialTheme.colorScheme.primary
-    val bgShape = MaterialTheme.shapes.medium
-    val infiniteTransition = rememberInfiniteTransition(label = "eclipsed")
-    val textAlpha by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 0.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, delayMillis = 25, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "eclipsedAlpha"
-    )
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .alpha(textAlpha)
-            .border(width = 2.dp, color = bgColor, shape = bgShape),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = stringResource(R.string.radar_eclipsed),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.background,
-            modifier = Modifier
-                .background(color = bgColor, shape = bgShape)
-                .padding(12.dp)
-        )
-    }
-}
 
 @Composable
 private fun TransmitterItem(
