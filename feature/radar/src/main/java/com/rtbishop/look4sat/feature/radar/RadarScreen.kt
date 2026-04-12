@@ -39,9 +39,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 // import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -80,7 +80,10 @@ import com.rtbishop.look4sat.core.presentation.infiniteMarquee
 import com.rtbishop.look4sat.core.presentation.isVerticalLayout
 import com.rtbishop.look4sat.core.presentation.layoutPadding
 
-fun NavGraphBuilder.radarDestination(navigateUp: () -> Unit) {
+fun NavGraphBuilder.radarDestination(
+    navigateUp: () -> Unit,
+    navigateToRadioControl: (Int, Long) -> Unit = { _, _ -> }
+) {
     val radarRoute = "${Screen.Radar.route}?catNum={catNum}&aosTime={aosTime}"
     val radarArgs = listOf(
         navArgument("catNum") { defaultValue = 0 },
@@ -89,19 +92,30 @@ fun NavGraphBuilder.radarDestination(navigateUp: () -> Unit) {
     composable(radarRoute, radarArgs) {
         val viewModel = viewModel(RadarViewModel::class.java, factory = RadarViewModel.Factory)
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        RadarScreen(uiState, navigateUp)
+        RadarScreen(uiState, viewModel::onAction, navigateUp, navigateToRadioControl)
     }
 }
 
 @Composable
-private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
-    val addToCalendar: () -> Unit = {
-        uiState.currentPass?.let { pass ->
-            uiState.sendAction(RadarAction.AddToCalendar(pass.name, pass.aosTime, pass.losTime))
-        }
-    }
+private fun RadarScreen(
+    uiState: RadarState,
+    onAction: (RadarAction) -> Unit,
+    navigateUp: () -> Unit,
+    navigateToRadioControl: (Int, Long) -> Unit
+) {
     val upcomingPass = uiState.currentPass ?: getDefaultPass()
     if (upcomingPass.losTime < System.currentTimeMillis()) navigateUp()
+
+    val addToCalendar: () -> Unit = {
+        uiState.currentPass?.let { pass ->
+            onAction(RadarAction.AddToCalendar(pass.name, pass.aosTime, pass.losTime))
+        }
+    }
+    val openRadioControl: () -> Unit = {
+        uiState.currentPass?.let { pass ->
+            navigateToRadioControl(pass.catNum, pass.aosTime)
+        }
+    }
     Column(
         modifier = Modifier
             .layoutPadding()
@@ -111,26 +125,26 @@ private fun RadarScreen(uiState: RadarState, navigateUp: () -> Unit) {
         val isVertical = isVerticalLayout()
         if (isVertical) {
             TopBar {
-                IconCard(action = navigateUp, resId = R.drawable.ic_back)
-                TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isCurrentTimeAos)
                 IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
+                TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isCurrentTimeAos)
+                IconCard(action = openRadioControl, resId = R.drawable.ic_radios)
             }
             TopBar { NextPassRow(pass = upcomingPass, isUtc = uiState.isUtc) }
         } else {
             TopBar {
-                IconCard(action = navigateUp, resId = R.drawable.ic_back)
+                IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
                 TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isCurrentTimeAos)
                 NextPassRow(pass = upcomingPass, modifier = Modifier.weight(1f), isUtc = uiState.isUtc)
-                IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
+                IconCard(action = openRadioControl, resId = R.drawable.ic_radios)
             }
         }
         if (isVertical) {
             RadarCard(uiState, Modifier.weight(1f))
-            TransmittersCard(uiState, Modifier.weight(1f))
+            TransmittersCard(uiState.transmitters, uiState.selectedTransmitterUuid, onAction, Modifier.weight(1f))
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 RadarCard(uiState, Modifier.weight(1f))
-                TransmittersCard(uiState, Modifier.weight(1f))
+                TransmittersCard(uiState.transmitters, uiState.selectedTransmitterUuid, onAction, Modifier.weight(1f))
             }
         }
     }
@@ -244,17 +258,22 @@ private fun RadarLabel(
 }
 
 @Composable
-private fun TransmittersCard(uiState: RadarState, modifier: Modifier = Modifier) {
+private fun TransmittersCard(
+    transmitters: List<SatRadio>,
+    selectedUuid: String?,
+    onAction: (RadarAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
     ElevatedCard(modifier = modifier) {
-        if (uiState.transmitters.isEmpty()) {
+        if (transmitters.isEmpty()) {
             EmptyTransmittersContent()
         } else {
             TransmittersList(
-                transmitters = uiState.transmitters,
-                selectedUuid = uiState.selectedTransmitterUuid,
+                transmitters = transmitters,
+                selectedUuid = selectedUuid,
                 onSelect = { uuid ->
-                    if (uiState.selectedTransmitterUuid != null) {
-                        uiState.sendAction(RadarAction.SelectTransmitter(uuid))
+                    if (selectedUuid != null) {
+                        onAction(RadarAction.SelectTransmitter(uuid))
                     }
                 }
             )
@@ -313,7 +332,6 @@ private fun TransmitterItemPreview() {
     MainTheme { TransmitterItem(transmitter, isClickable = true, isSelected = true, onClick = {}) }
 }
 
-
 @Composable
 private fun TransmitterItem(
     radio: SatRadio,
@@ -323,42 +341,42 @@ private fun TransmitterItem(
 ) {
     val title = if (radio.isInverted) "INVERTED: ${radio.info}" else radio.info
     val fullTitle = "$title - (${radio.downlinkMode ?: "--"}/${radio.uplinkMode ?: "--"})"
-    Surface(
-        color = MaterialTheme.colorScheme.background,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (isClickable) Modifier.clickable { onClick() } else Modifier)
     ) {
-        Surface(modifier = Modifier.padding(bottom = 2.dp)) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
-            ) {
-                Box {
-                    Text(
-                        text = fullTitle,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 6.dp)
-                            .infiniteMarquee()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+        ) {
+            Box {
+                Text(
+                    text = fullTitle,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 6.dp)
+                        .infiniteMarquee()
+                )
+                if (isSelected) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_radios),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.background(color = MaterialTheme.colorScheme.surface)
                     )
-                    if (isSelected) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_radios),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.background(color = MaterialTheme.colorScheme.surface)
-                        )
-                    }
                 }
-                FrequencyRow(radio = radio, isDownlink = true)
-                FrequencyRow(radio = radio, isDownlink = false)
             }
+            FrequencyRow(radio = radio, isDownlink = true)
+            FrequencyRow(radio = radio, isDownlink = false)
         }
+        HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.background)
     }
 }
 

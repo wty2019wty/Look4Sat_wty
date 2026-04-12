@@ -32,12 +32,11 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +60,8 @@ private val allModes = listOf(
     "PSK", "PSK31", "PSK63", "QPSK", "QPSK31", "QPSK63", "SSTV", "USB", "WSJT"
 )
 
+private val hourSteps = listOf(1, 2, 4, 8, 12, 24, 48, 72, 96, 120, 144, 168, 192, 216, 240)
+
 @Preview
 @Composable
 private fun PassesDialogPreview() {
@@ -68,27 +69,28 @@ private fun PassesDialogPreview() {
 }
 
 @Composable
-fun PassesDialog(hours: Int, elevation: Double, cancel: () -> Unit, accept: (Int, Double) -> Unit) {
-    val hoursValue = remember { mutableIntStateOf(hours) }
+internal fun PassesDialog(hours: Int, elevation: Double, cancel: () -> Unit, accept: (Int, Double) -> Unit) {
+    val hoursIndex = remember { mutableIntStateOf(hourSteps.indexOfFirst { it >= hours }.coerceAtLeast(0)) }
     val elevationValueNew = remember { mutableDoubleStateOf(elevation) }
     val onAccept = {
-        accept(hoursValue.intValue, elevationValueNew.doubleValue).also { cancel() }
+        accept(hourSteps[hoursIndex.intValue], elevationValueNew.doubleValue).also { cancel() }
     }
     SharedDialog(title = stringResource(R.string.pass_filter_title), onCancel = cancel, onAccept = onAccept) {
         SliderRow(
             title = stringResource(R.string.pass_filter_elev),
             value = elevationValueNew.doubleValue,
-            valuePostfix = "°",
+            displayValue = "${elevationValueNew.doubleValue.toInt()}°",
             valueResId = R.drawable.ic_elevation,
             valueRange = 0f..60f
         ) { elevationValueNew.doubleValue = it.toDouble() }
         SliderRow(
             title = stringResource(R.string.pass_filter_hours),
-            value = hoursValue.intValue.toDouble(),
-            valuePostfix = "h",
+            value = hoursIndex.intValue.toDouble(),
+            displayValue = "${hourSteps[hoursIndex.intValue]}h",
             valueResId = R.drawable.ic_clock,
-            valueRange = 1f..240f
-        ) { hoursValue.intValue = it.toInt() }
+            valueRange = 0f..(hourSteps.size - 1).toFloat(),
+            steps = hourSteps.size - 2
+        ) { hoursIndex.intValue = it.toInt().coerceIn(0, hourSteps.size - 1) }
     }
 }
 
@@ -96,9 +98,10 @@ fun PassesDialog(hours: Int, elevation: Double, cancel: () -> Unit, accept: (Int
 private fun SliderRow(
     title: String,
     value: Double,
-    valuePostfix: String,
+    displayValue: String,
     valueResId: Int,
     valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int = 0,
     onChange: (Float) -> Unit
 ) {
     Column(
@@ -123,13 +126,13 @@ private fun SliderRow(
                 modifier = Modifier.size(20.dp)
             )
             Text(
-                text = "${value.toInt()}$valuePostfix",
+                text = displayValue,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        Slider(value = value.toFloat(), onValueChange = onChange, valueRange = valueRange)
+        Slider(value = value.toFloat(), onValueChange = onChange, valueRange = valueRange, steps = steps)
     }
 }
 
@@ -140,12 +143,12 @@ private fun RadiosDialogPreview() {
 }
 
 @Composable
-fun RadiosDialog(modes: List<String>, cancel: () -> Unit, accept: (List<String>) -> Unit) {
-    val selected = remember { mutableStateListOf<String>().apply { addAll(modes) } }
-    val select = { mode: String ->
-        if (selected.contains(mode)) selected.remove(mode) else selected.add(mode)
+internal fun RadiosDialog(modes: List<String>, cancel: () -> Unit, accept: (List<String>) -> Unit) {
+    val selected = remember { mutableStateOf(modes.toSet()) }
+    val toggle = { mode: String ->
+        selected.value = if (mode in selected.value) selected.value - mode else selected.value + mode
     }
-    val onAccept = { accept(selected.toList()).also { cancel() } }
+    val onAccept = { accept(selected.value.toList()).also { cancel() } }
     SharedDialog(title = stringResource(R.string.pass_modes_title), onCancel = cancel, onAccept = onAccept) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(240.dp),
@@ -156,32 +159,30 @@ fun RadiosDialog(modes: List<String>, cancel: () -> Unit, accept: (List<String>)
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             itemsIndexed(allModes) { index, item ->
-                Surface {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.surface)
-                            .clickable { select(item) }
-                    ) {
-                        Text(
-                            text = "${index + 1}).",
-                            modifier = Modifier.padding(start = 16.dp, end = 8.dp),
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = item,
-                            modifier = Modifier.weight(1f),
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Checkbox(
-                            checked = selected.contains(item),
-                            onCheckedChange = null,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surface)
+                        .clickable { toggle(item) }
+                ) {
+                    Text(
+                        text = "${index + 1}).",
+                        modifier = Modifier.padding(start = 16.dp, end = 8.dp),
+                        fontWeight = FontWeight.Normal,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = item,
+                        modifier = Modifier.weight(1f),
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Checkbox(
+                        checked = item in selected.value,
+                        onCheckedChange = null,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
                 }
             }
         }
