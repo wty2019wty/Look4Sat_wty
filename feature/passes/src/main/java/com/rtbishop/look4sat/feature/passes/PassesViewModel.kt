@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -46,32 +47,33 @@ class PassesViewModel(
     private val defaultPass = getDefaultPass()
     private val _uiState = MutableStateFlow(
         PassesState(
-            isPassesDialogShown = false,
-            isRadiosDialogShown = false,
-            isRefreshing = true,
             isUtc = settingsRepo.otherSettings.value.stateOfUtc,
-            nextTime = "00:00:00",
-            isNextTimeAos = true,
             nextPass = defaultPass,
             hours = settingsRepo.passesSettings.value.hoursAhead,
             elevation = settingsRepo.passesSettings.value.minElevation,
             modes = settingsRepo.passesSettings.value.selectedModes,
-            itemsList = emptyList(),
-            shouldSeeWhatsNew = settingsRepo.otherSettings.value.shouldSeeWhatsNew,
-            takeAction = ::handleAction
+            shouldSeeWhatsNew = settingsRepo.otherSettings.value.shouldSeeWhatsNew
         )
     )
     val uiState: StateFlow<PassesState> = _uiState
 
     init {
-        // React to raw pass list changes (initial load, recalculation, filter change)
+        // Show refreshing indicator whenever the selected satellites list changes
         viewModelScope.launch {
-            var initialLoadDone = false
-            satelliteRepo.passes.collectLatest { passes ->
-                if (!initialLoadDone && passes.isNotEmpty()) {
-                    initialLoadDone = true
+            settingsRepo.selectedIds.collectLatest { selectedIds ->
+                _uiState.update { it.copy(isRefreshing = true) }
+                if (selectedIds.isEmpty()) {
+                    // No satellites selected — show indicator briefly, then stop
+                    delay(1000)
                     _uiState.update { it.copy(isRefreshing = false) }
                 }
+                // For non-empty selections, the passes collector below will clear isRefreshing
+            }
+        }
+        // Stop refreshing whenever new passes arrive (from initial load, selection change, or filter)
+        viewModelScope.launch {
+            satelliteRepo.passes.drop(1).collect { _ ->
+                _uiState.update { it.copy(isRefreshing = false) }
             }
         }
         // Local tick loop — computes pass progress and countdown timer every second
@@ -79,13 +81,13 @@ class PassesViewModel(
             while (isActive) {
                 val timeNow = System.currentTimeMillis()
                 val processed = computePassProgress(satelliteRepo.passes.value, timeNow)
-                val nextInfo = resolveNextPass(processed, timeNow)
+                val (nextPass, nextTime, isAos) = resolveNextPass(processed, timeNow)
                 _uiState.update {
                     it.copy(
                         itemsList = processed,
-                        nextPass = nextInfo.first,
-                        nextTime = nextInfo.second,
-                        isNextTimeAos = nextInfo.third
+                        nextPass = nextPass,
+                        nextTime = nextTime,
+                        isNextTimeAos = isAos
                     )
                 }
                 delay(1000)
@@ -100,6 +102,17 @@ class PassesViewModel(
                     )
                 }
             }
+        }
+    }
+
+    fun onAction(action: PassesAction) {
+        when (action) {
+            PassesAction.DismissWhatsNew -> settingsRepo.setWhatsNewDismissed()
+            is PassesAction.FilterPasses -> applyFilter(action.hoursAhead, action.minElevation, _uiState.value.modes)
+            is PassesAction.FilterRadios -> applyFilter(_uiState.value.hours, _uiState.value.elevation, action.modes)
+            PassesAction.RefreshPasses -> refreshPasses()
+            PassesAction.TogglePassesDialog -> _uiState.update { it.copy(isPassesDialogShown = !it.isPassesDialogShown) }
+            PassesAction.ToggleRadiosDialog -> _uiState.update { it.copy(isRadiosDialogShown = !it.isRadiosDialogShown) }
         }
     }
 
@@ -129,26 +142,15 @@ class PassesViewModel(
         passes: List<OrbitalPass>,
         timeNow: Long
     ): Triple<OrbitalPass, String, Boolean> {
-        val upcoming = passes.firstOrNull { it.aosTime.minus(timeNow) > 0 }
+        val upcoming = passes.firstOrNull { it.aosTime > timeNow }
         if (upcoming != null) {
-            return Triple(upcoming, upcoming.aosTime.minus(timeNow).toTimerString(), true)
+            return Triple(upcoming, (upcoming.aosTime - timeNow).toTimerString(), true)
         }
         if (passes.isNotEmpty()) {
             val lastPass = passes.last()
-            return Triple(lastPass, lastPass.losTime.minus(timeNow).toTimerString(), false)
+            return Triple(lastPass, (lastPass.losTime - timeNow).toTimerString(), false)
         }
         return Triple(defaultPass, "00:00:00", true)
-    }
-
-    private fun handleAction(action: PassesAction) {
-        when (action) {
-            PassesAction.DismissWhatsNew -> settingsRepo.setWhatsNewDismissed()
-            is PassesAction.FilterPasses -> applyFilter(action.hoursAhead, action.minElevation, uiState.value.modes)
-            is PassesAction.FilterRadios -> applyFilter(uiState.value.hours, uiState.value.elevation, action.modes)
-            PassesAction.RefreshPasses -> refreshPasses()
-            PassesAction.TogglePassesDialog -> toggleFilterDialog()
-            PassesAction.ToggleRadiosDialog -> toggleRadiosDialog()
-        }
     }
 
     private fun applyFilter(hoursAhead: Int, minElevation: Double, modes: List<String>) = viewModelScope.launch {
@@ -166,15 +168,6 @@ class PassesViewModel(
         _uiState.update { it.copy(isRefreshing = false) }
     }
 
-    private fun toggleFilterDialog() {
-        val currentDialogState = _uiState.value.isPassesDialogShown
-        _uiState.update { it.copy(isPassesDialogShown = currentDialogState.not()) }
-    }
-
-    private fun toggleRadiosDialog() {
-        val currentDialogState = _uiState.value.isRadiosDialogShown
-        _uiState.update { it.copy(isRadiosDialogShown = currentDialogState.not()) }
-    }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

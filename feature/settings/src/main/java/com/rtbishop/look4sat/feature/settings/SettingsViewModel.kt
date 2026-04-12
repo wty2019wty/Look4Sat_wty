@@ -47,11 +47,8 @@ class SettingsViewModel(
             dataSettings = defaultDataSettings,
             otherSettings = settingsRepo.otherSettings.value,
             rcSettings = settingsRepo.rcSettings.value,
-            dataSourcesSettings = settingsRepo.dataSourcesSettings.value,
-            sendAction = ::handleAction,
-            sendRCAction = ::handleAction,
-            sendSystemAction = ::handleAction,
-            sendDataSourcesAction = ::handleAction
+            radioControlSettings = settingsRepo.radioControlSettings.value,
+            dataSourcesSettings = settingsRepo.dataSourcesSettings.value
         )
     )
 
@@ -94,15 +91,22 @@ class SettingsViewModel(
                 _uiState.update { it.copy(dataSourcesSettings = settings) }
             }
         }
+        viewModelScope.launch {
+            settingsRepo.radioControlSettings.collect { settings ->
+                _uiState.update { it.copy(radioControlSettings = settings) }
+            }
+        }
     }
 
 
-    private fun handleAction(action: SettingsAction) {
+    fun onAction(action: SettingsAction) {
         when (action) {
+            // Position
             SettingsAction.SetGpsPosition -> setGpsPosition()
             is SettingsAction.SetGeoPosition -> setGeoPosition(action.latitude, action.longitude)
             is SettingsAction.SetQthPosition -> setQthPosition(action.locator)
             SettingsAction.DismissPosMessages -> dismissPosMessage()
+            // Data
             SettingsAction.UpdateFromWeb -> runDataUpdate { databaseRepo.updateFromRemote() }
             is SettingsAction.UpdateTLEFromFile -> runDataUpdate { databaseRepo.updateTLEFromFile(action.uri) }
             is SettingsAction.UpdateTransceiversFromFile -> runDataUpdate {
@@ -110,31 +114,19 @@ class SettingsViewModel(
                     action.uri
                 )
             }
-
             SettingsAction.ClearAllData -> viewModelScope.launch { databaseRepo.clearAllData() }
+            // Toggles
             is SettingsAction.ToggleUtc -> settingsRepo.updateOtherSettings { it.copy(stateOfUtc = action.value) }
             is SettingsAction.ToggleUpdate -> settingsRepo.updateOtherSettings { it.copy(stateOfAutoUpdate = action.value) }
             is SettingsAction.ToggleSweep -> settingsRepo.updateOtherSettings { it.copy(stateOfSweep = action.value) }
             is SettingsAction.ToggleSensor -> settingsRepo.updateOtherSettings { it.copy(stateOfSensors = action.value) }
             is SettingsAction.ToggleLightTheme -> settingsRepo.updateOtherSettings { it.copy(stateOfLightTheme = action.value) }
-        }
-    }
-
-    private fun handleAction(action: RCAction) {
-        when (action) {
-            is RCAction.Update -> settingsRepo.updateRCSettings(action.settings)
-        }
-    }
-
-    private fun handleAction(action: SystemAction) {
-        when (action) {
-            is SystemAction.ShowToast -> showToast(action.message)
-        }
-    }
-
-    private fun handleAction(action: DataSourcesAction) {
-        when (action) {
-            is DataSourcesAction.Update -> settingsRepo.updateDataSourcesSettings(action.settings)
+            // Remote control & data sources
+            is SettingsAction.UpdateRC -> settingsRepo.updateRCSettings(action.settings)
+            is SettingsAction.UpdateRadioControl -> settingsRepo.updateRadioControlSettings(action.settings)
+            is SettingsAction.UpdateDataSources -> settingsRepo.updateDataSourcesSettings(action.settings)
+            // System
+            is SettingsAction.ShowToast -> showToast(action.message)
         }
     }
 
@@ -175,7 +167,7 @@ class SettingsViewModel(
     // region Data update helpers — consolidated from 3 near-identical functions
 
     /**
-     * Common data update logic. Sets isUpdating=true, runs the suspend [block],
+     * Common data update logic. Sets isUpdating=true, runs the suspending [block],
      * and resets isUpdating=false on failure.
      */
     private fun runDataUpdate(block: suspend () -> Unit) = viewModelScope.launch {
