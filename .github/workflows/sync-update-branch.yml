@@ -6,7 +6,7 @@ permissions:
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # 每天10点自动同步
+    - cron: '0 2 * * *'
   workflow_dispatch:    # 支持手动触发
 
 jobs:
