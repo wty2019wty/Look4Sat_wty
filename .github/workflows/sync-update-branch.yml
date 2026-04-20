@@ -19,4 +19,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 官方内置令牌，无需配置
         run: |
           # 同步上游 update 分支到你的仓库
-          gh repo sync ${{ github.repository }} --branch update
+          gh repo sync ${{ github.repository }} --branch upstream
