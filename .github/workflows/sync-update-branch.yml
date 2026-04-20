@@ -1,38 +1,22 @@
-name: 同步上游 update 分支
-on:
-  workflow_dispatch:  # 手动触发同步
-  schedule:
-    - cron: "0 2 * * *"  # 每天UTC 2点（北京时间10点）自动同步
+name: Upstream Sync
 
+# 必须配置写权限，否则 GITHUB_TOKEN 无法推送
 permissions:
   contents: write
 
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 每天10点自动同步
+  workflow_dispatch:    # 支持手动触发
+
 jobs:
-  sync:
+  sync-fork:
+    name: Sync fork with upstream
     runs-on: ubuntu-latest
     steps:
-      - name: 检出仓库代码
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 拉取完整提交历史，必须加
-          token: ${{ secrets.GITHUB_TOKEN }}  # 官方内置令牌，无需配置
-
-      - name: 配置Git身份
+      - name: Sync with upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 官方内置令牌，无需配置
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: 添加上游原仓库
-        run: git remote add upstream https://github.com/rt-bishop/Look4Sat.git
-
-      - name: 拉取上游所有分支代码
-        run: git fetch upstream
-
-      - name: 切换到自己的 update 分支
-        run: git checkout update
-
-      - name: 合并上游 update 分支最新代码
-        run: git merge --no-edit upstream/update
-
-      - name: 推送到自己的 Fork 仓库
-        run: git push origin update
+          # 同步上游 update 分支到你的仓库
+          gh repo sync ${{ github.repository }} --branch update
