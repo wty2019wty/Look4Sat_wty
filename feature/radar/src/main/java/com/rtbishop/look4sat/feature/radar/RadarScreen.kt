@@ -44,6 +44,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,9 +62,6 @@ import androidx.compose.ui.unit.sp
 // import androidx.compose.ui.graphics.Brush
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.rtbishop.look4sat.core.domain.model.SatRadio
 import com.rtbishop.look4sat.core.domain.predict.OrbitalPos
 import com.rtbishop.look4sat.core.domain.utility.toDegrees
@@ -72,7 +70,6 @@ import com.rtbishop.look4sat.core.presentation.IconCard
 import com.rtbishop.look4sat.core.presentation.MainTheme
 import com.rtbishop.look4sat.core.presentation.NextPassRow
 import com.rtbishop.look4sat.core.presentation.R
-import com.rtbishop.look4sat.core.presentation.Screen
 import com.rtbishop.look4sat.core.presentation.TimerRow
 import com.rtbishop.look4sat.core.presentation.TopBar
 import com.rtbishop.look4sat.core.presentation.getDefaultPass
@@ -80,20 +77,20 @@ import com.rtbishop.look4sat.core.presentation.infiniteMarquee
 import com.rtbishop.look4sat.core.presentation.isVerticalLayout
 import com.rtbishop.look4sat.core.presentation.layoutPadding
 
-fun NavGraphBuilder.radarDestination(
+@Composable
+fun RadarDestination(
+    catNum: Int = 0,
+    aosTime: Long = 0L,
     navigateUp: () -> Unit,
     navigateToRadioControl: (Int, Long) -> Unit = { _, _ -> }
 ) {
-    val radarRoute = "${Screen.Radar.route}?catNum={catNum}&aosTime={aosTime}"
-    val radarArgs = listOf(
-        navArgument("catNum") { defaultValue = 0 },
-        navArgument("aosTime") { defaultValue = 0L }
+    val viewModel = viewModel(
+        modelClass = RadarViewModel::class.java,
+        key = "$catNum-$aosTime",
+        factory = RadarViewModel.factory(catNum, aosTime)
     )
-    composable(radarRoute, radarArgs) {
-        val viewModel = viewModel(RadarViewModel::class.java, factory = RadarViewModel.Factory)
-        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        RadarScreen(uiState, viewModel::onAction, navigateUp, navigateToRadioControl)
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    RadarScreen(uiState, viewModel::onAction, navigateUp, navigateToRadioControl)
 }
 
 @Composable
@@ -104,7 +101,7 @@ private fun RadarScreen(
     navigateToRadioControl: (Int, Long) -> Unit
 ) {
     val upcomingPass = uiState.currentPass ?: getDefaultPass()
-    if (upcomingPass.losTime < System.currentTimeMillis()) navigateUp()
+    LaunchedEffect(uiState.isLos) { if (uiState.isLos) navigateUp() }
 
     val addToCalendar: () -> Unit = {
         uiState.currentPass?.let { pass ->
@@ -126,14 +123,14 @@ private fun RadarScreen(
         if (isVertical) {
             TopBar {
                 IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
-                TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isCurrentTimeAos)
+                TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isTimeAos)
                 IconCard(action = openRadioControl, resId = R.drawable.ic_radios)
             }
             TopBar { NextPassRow(pass = upcomingPass, isUtc = uiState.isUtc) }
         } else {
             TopBar {
                 IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
-                TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isCurrentTimeAos)
+                TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isTimeAos)
                 NextPassRow(pass = upcomingPass, modifier = Modifier.weight(1f), isUtc = uiState.isUtc)
                 IconCard(action = openRadioControl, resId = R.drawable.ic_radios)
             }
@@ -152,8 +149,8 @@ private fun RadarScreen(
 
 @Composable
 private fun RadarCard(uiState: RadarState, modifier: Modifier = Modifier) {
-    val isEclipsed = uiState.orbitalPos?.eclipsed == true
-    val borderModifier = if (isEclipsed) {
+    val satellitePos = uiState.orbitalPos
+    val borderModifier = if (satellitePos?.aboveHorizon == true && satellitePos.eclipsed) {
         val infiniteTransition = rememberInfiniteTransition(label = "eclipsedBorder")
         val borderAlpha by infiniteTransition.animateFloat(
             initialValue = 1.0f,
