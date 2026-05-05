@@ -18,7 +18,6 @@
 package com.rtbishop.look4sat.core.domain.source
 
 object Sources {
-    const val RADIO_DATA_URL = "https://tle.486520.xyz/https://db.satnogs.org/api/transmitters/?format=json&status=active"
     val satelliteDataUrls = mapOf(
         "All" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=csv",
         "Amateur" to "https://tle.486520.xyz/https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=csv",
@@ -48,5 +47,8 @@ object Sources {
         "McCants" to "https://tle.486520.xyz/https://www.mmccants.org/tles/inttles.zip",
         "R4UAB" to "https://tle.486520.xyz/https://r4uab.ru/satonline.txt",
         "Other" to "" // key for sats filter
+    )
+    val transceiversDataUrls = mapOf(
+        "SatNOGS" to "https://tle.486520.xyz/https://db.satnogs.org/api/transmitters/?format=json&status=active"
     )
 }
