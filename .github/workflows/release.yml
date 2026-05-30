@@ -1,22 +1,13 @@
-name: release wty
+name: release
 
 on:
   push:
     tags:
-      - v** # 标签推送触发，匹配v开头的标签
-
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., v4.1.0)'
-        required: true
-        default: 'v4.1.0)'
-        type: string
+      - v**
 
 env:
-  # 核心修改1：统一版本号变量，标签推送用原标签名，手动触发用输入的version
-  TAG_NAME: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.version }}
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TAG_NAME: ${{ github.ref_name }}
+  GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
 jobs:
   release:
@@ -26,14 +17,12 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '17'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -44,7 +33,7 @@ jobs:
       - name: Sign APK
         run: |
           echo "${{ secrets.KEY_STORE }}" | base64 -d > keystore.jks
-          APK=$(find app/build/outputs/apk/release -name "*.apk" -not -name "*unsigned*" | head -1)
+          APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
           BUILD_TOOLS=$(ls -d ${ANDROID_HOME}/build-tools/*/ | sort -V | tail -1)
           ${BUILD_TOOLS}apksigner sign \
             --ks keystore.jks \
@@ -55,6 +44,17 @@ jobs:
             "$APK"
           rm keystore.jks
 
+      - name: Sign Bundle
+        run: |
+          echo "${{ secrets.KEY_STORE }}" | base64 -d > keystore.jks
+          AAB=$(find app/build/outputs/bundle/release -name "*.aab" | head -1)
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore keystore.jks \
+            -storepass ${{ secrets.KEY_STORE_PASSWORD }} \
+            -keypass ${{ secrets.KEY_PASSWORD }} \
+            "$AAB" ${{ secrets.KEY_ALIAS }}
+          rm keystore.jks
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -62,15 +62,19 @@ jobs:
 
       - name: Deploy Bundle to Google Play
         run: |
-          # 核心修改2：重命名产物，拼接TAG_NAME版本号到文件名
-          mv ${{steps.sign_apk.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat-${TAG_NAME}.apk
-          mv ${{steps.sign_bundle.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat-${TAG_NAME}.aab
+          gem install fastlane --no-document
+          AAB=$(find app/build/outputs/bundle/release -name "*.aab" | head -1)
+          echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > service_account.json
+          fastlane supply \
+            --aab "$AAB" \
+            --json_key service_account.json \
+            --package_name com.rtbishop.look4sat \
+            --track production \
+            --skip_upload_images true \
+            --skip_upload_screenshots true \
+          rm service_account.json
 
-      - name: Create Release and Upload Artifacts
+      - name: Create Release
         run: |
-          # 核心修改3：统一用TAG_NAME作为Release标签/标题，上传带版本号的产物
-          gh release create $TAG_NAME --title="$TAG_NAME" --generate-notes
-          # 上传带版本号的APK
-          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat-${TAG_NAME}.apk
-          # 可选：同时上传带版本号的AAB（建议保留，适配应用商店发布）
-          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat-${TAG_NAME}.aab
+          gh release create $TAG_NAME --title=$TAG_NAME --generate-notes
+          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat.apk
