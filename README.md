@@ -2,8 +2,8 @@
 [![Hits](https://hits.sh/github.com/wty2019wty/Look4Sat_wty.svg?style=plastic)](https://hits.sh/github.com/wty2019wty/Look4Sat_wty/)
 
 
-# [cf 反代加速worker.js](/wty_add_whitelist_worker.js)
-### 将卫星数据更新添加了代理，方便访问
+# [tle.for.look4sat](https://github.com/20250721/tle.for.look4sat/)
+### 将卫星数据更新添加了中转站，方便访问
 
 ### 修改了包名com.rtbishop_wtyts.look4sat
 
