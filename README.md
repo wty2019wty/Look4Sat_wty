@@ -5,7 +5,7 @@
 # [cf 反代加速worker.js](/wty_add_whitelist_worker.js)
 ### 将卫星数据更新添加了代理，方便访问
 
-### 修改了包名com.rtbishop_wty.look4sat
+### 修改了包名com.rtbishop_wtyts.look4sat
 
 ```
 helps for wty(PowerShell)

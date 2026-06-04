@@ -11,7 +11,7 @@ minSdk = "24"
 jdkVersion = "17"
 #noinspection UnusedVersionCatalogEntry
 packageName = "com.rtbishop.look4sat"
-wtypackageName = "com.rtbishop_wty.look4sat"
+wtypackageName = "com.rtbishop_wtyts.look4sat"
 
 android-gradle-plugin = "9.2.1"
 
