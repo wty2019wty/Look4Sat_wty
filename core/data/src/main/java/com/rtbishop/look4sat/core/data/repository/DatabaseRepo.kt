@@ -95,7 +95,10 @@ class DatabaseRepo(
     }
 
     private suspend fun parseSatelliteStream(url: String, stream: InputStream): List<OrbitalData> = when {
-        url.contains("FORMAT=csv", ignoreCase = true) -> dataParser.parseCSVStream(stream)
+        //
+        url.contains("FORMAT=csv", ignoreCase = true) || url.endsWith(".csv", ignoreCase = true) -> dataParser.parseCSVStream(stream)   
+        //@troilus  
+        //Look4Sat-TLEcn/compare/v4.4.0...v4.4.0test
         else -> dataParser.parseTLEStream(stream)
     }
 

@@ -5,6 +5,8 @@
 # [tle.for.look4sat](https://github.com/20250721/tle.for.look4sat/)
 ### 将卫星数据更新添加了中转站，方便访问
 
+[DatabaseRepo.kt](core\data\src\main\java\com\rtbishop\look4sat\core\data\repository\DatabaseRepo.kt)参考了[@troilus](https://github.com/troilus/Look4Sat-TLEcn/compare/v4.4.0...v4.4.0test)
+
 ### 修改了包名com.rtbishop_wtyts.look4sat
 
 ```
