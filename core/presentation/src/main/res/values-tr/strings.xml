@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Commmon -->
-    <string name="app_name" translatable="false">Look4Sat</string>
+    <string name="app_name" translatable="false">Look4Sat.ts</string>
     <string name="btn_accept">Kabul et</string>
     <string name="btn_cancel">İptal</string>
     <string name="empty_list_message">Gösterilecek veri bulunamadı</string>
