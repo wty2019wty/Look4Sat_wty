@@ -1,0 +1,36 @@
+{
+  "version": 8,
+  "sources": {
+    "osm-vector": {
+      "type": "vector",
+      "tiles": [
+        "http://192.168.10.10/{z}/{x}/{y}.jpg"
+      ]
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          0, "#ffffff",
+          7, "#ffffff"
+        ]
+      }
+    },
+    {
+      "id": "ocean",
+      "type": "fill",
+      "source": "osm-vector",
+      "source-layer": "ocean",
+      "minzoom": 0,
+      "paint": {
+        "fill-color": "#d9d9d9"
+      }
+    }
+  ]
+}
