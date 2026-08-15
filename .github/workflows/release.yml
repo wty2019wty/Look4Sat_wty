@@ -7,7 +7,7 @@ on:
 
 env:
   TAG_NAME: ${{ github.ref_name }}
-  GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+  GITHUB_TOKEN: ${{ github.token }}
 
 jobs:
   release:
@@ -40,7 +40,7 @@ jobs:
             --ks-pass pass:${{ secrets.KEY_STORE_PASSWORD }} \
             --ks-key-alias ${{ secrets.KEY_ALIAS }} \
             --key-pass pass:${{ secrets.KEY_PASSWORD }} \
-            --out app/build/outputs/apk/release/look4sat.apk \
+            --out app/build/outputs/apk/release/look4sat-$TAG_NAME.apk \
             "$APK"
           rm keystore.jks
 
@@ -55,27 +55,7 @@ jobs:
             "$AAB" ${{ secrets.KEY_ALIAS }}
           rm keystore.jks
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.4'
-
-      - name: Deploy Bundle to Google Play
-        run: |
-          gem install multi_json
-          gem install fastlane --no-document
-          AAB=$(find app/build/outputs/bundle/release -name "*.aab" | head -1)
-          echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > service_account.json
-          fastlane supply \
-            --aab "$AAB" \
-            --json_key service_account.json \
-            --package_name com.rtbishop.look4sat \
-            --track production \
-            --skip_upload_images true \
-            --skip_upload_screenshots true \
-          rm service_account.json
-
       - name: Create Release
         run: |
           gh release create $TAG_NAME --title=$TAG_NAME --generate-notes
-          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat.apk
+          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat-$TAG_NAME.apk
