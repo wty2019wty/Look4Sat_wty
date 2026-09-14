@@ -149,7 +149,12 @@ private fun SatStatusScreen(
 ) {
     var selectedDay by remember { mutableStateOf<Pair<SatStatus, SatDay>?>(null) }
     Column(modifier = Modifier.fillMaxSize().layoutPadding()) {
-        StatusHeader(fetchedAtUtcMs = uiState.fetchedAtUtcMs, isRefreshing = uiState.isRefreshing, onRefresh = refresh)
+        StatusHeader(
+            fetchedAtUtcMs = uiState.fetchedAtUtcMs,
+            isUtc = uiState.isUtc,
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = refresh
+        )
         LegendRow()
 
         when {
@@ -203,14 +208,14 @@ private fun SatStatusScreen(
 
 /** Top: update time + refresh button (spinner while loading) */
 @Composable
-private fun StatusHeader(fetchedAtUtcMs: Long, isRefreshing: Boolean, onRefresh: () -> Unit) {
+private fun StatusHeader(fetchedAtUtcMs: Long, isUtc: Boolean, isRefreshing: Boolean, onRefresh: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = if (fetchedAtUtcMs > 0)
-                stringResource(id = R.string.amsat_updated) + " " + formatFetchedAt(fetchedAtUtcMs)
+                stringResource(id = R.string.amsat_updated) + " " + formatFetchedAt(fetchedAtUtcMs, isUtc)
             else
                 stringResource(id = R.string.amsat_title),
             fontSize = 14.sp,
@@ -598,8 +603,8 @@ private fun uploadErrorText(error: String): String {
 
 private val MONTH_ABBR = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
-private fun formatFetchedAt(utcMs: Long): String {
-    val cal = Calendar.getInstance()
+private fun formatFetchedAt(utcMs: Long, isUtc: Boolean): String {
+    val cal = if (isUtc) Calendar.getInstance(TimeZone.getTimeZone("UTC")) else Calendar.getInstance()
     cal.timeInMillis = utcMs
     val day = cal.get(Calendar.DAY_OF_MONTH)
     val monthIndex = cal.get(Calendar.MONTH)
@@ -607,10 +612,11 @@ private fun formatFetchedAt(utcMs: Long): String {
     val hh = cal.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
     val mm = cal.get(Calendar.MINUTE).toString().padStart(2, '0')
     val ss = cal.get(Calendar.SECOND).toString().padStart(2, '0')
+    val suffix = if (isUtc) " UTC" else ""
     return if (Locale.getDefault().language == Locale.CHINESE.language) {
-        "${year}年${monthIndex + 1}月${day}日 - $hh:$mm:$ss"
+        "${year}年${monthIndex + 1}月${day}日 - $hh:$mm:$ss$suffix"
     } else {
-        "$day${MONTH_ABBR[monthIndex]} $year - $hh:$mm:$ss"
+        "$day${MONTH_ABBR[monthIndex]} $year - $hh:$mm:$ss$suffix"
     }
 }
 

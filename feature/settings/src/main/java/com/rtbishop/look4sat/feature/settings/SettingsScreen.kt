@@ -81,6 +81,7 @@ import com.rtbishop.look4sat.core.presentation.isVerticalLayout
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun SettingsDestination() {
@@ -267,6 +268,7 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
             item {
                 LocationCard(
                     settings = uiState.positionSettings,
+                    isUtc = uiState.otherSettings.stateOfUtc,
                     setGpsPos = permissions.launchLocation,
                     showPosDialog = { dialogs.position = true },
                     showLocDialog = { dialogs.locator = true },
@@ -277,6 +279,7 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
             item {
                 DataCard(
                     settings = uiState.dataSettings,
+                    isUtc = uiState.otherSettings.stateOfUtc,
                     updateFromWeb = { onAction(SettingsAction.UpdateFromWeb) },
                     clearAllData = { onAction(SettingsAction.ClearAllData) },
                     showDataSourcesDialog = { dialogs.dataSources = true }
@@ -314,12 +317,13 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
 private fun LocationCardPreview() = MainTheme {
     val stationPos = GeoPos(0.0, 0.0, 0.0, "IO91vl", 0L)
     val settings = PositionSettings(true, stationPos, 0)
-    LocationCard(settings = settings, setGpsPos = {}, showPosDialog = {}, {}, {}) {}
+    LocationCard(settings = settings, isUtc = false, setGpsPos = {}, showPosDialog = {}, {}, {}) {}
 }
 
 @Composable
 private fun LocationCard(
     settings: PositionSettings,
+    isUtc: Boolean,
     setGpsPos: () -> Unit,
     showPosDialog: () -> Unit,
     showLocDialog: () -> Unit,
@@ -339,7 +343,7 @@ private fun LocationCard(
                 UpdateIndicator(isUpdating = settings.isUpdating, Modifier.weight(1f))
             }
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = formatUpdateTime(updateTime = settings.stationPos.timestamp))
+            Text(text = formatUpdateTime(updateTime = settings.stationPos.timestamp, isUtc = isUtc))
             Spacer(modifier = Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(text = stringResource(R.string.prefs_lat_prefix, settings.stationPos.latitude))
@@ -381,12 +385,13 @@ private fun LocationCard(
 @Composable
 private fun DataCardPreview() = MainTheme {
     val settings = DataSettings(true, 5000, 2500, 0L)
-    DataCard(settings = settings, updateFromWeb = {}, clearAllData = {}, showDataSourcesDialog = {})
+    DataCard(settings = settings, isUtc = false, updateFromWeb = {}, clearAllData = {}, showDataSourcesDialog = {})
 }
 
 @Composable
 private fun DataCard(
     settings: DataSettings,
+    isUtc: Boolean,
     updateFromWeb: () -> Unit,
     clearAllData: () -> Unit,
     showDataSourcesDialog: () -> Unit
@@ -404,7 +409,7 @@ private fun DataCard(
                 UpdateIndicator(isUpdating = settings.isUpdating, Modifier.weight(1f))
             }
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = formatUpdateTime(updateTime = settings.timestamp))
+            Text(text = formatUpdateTime(updateTime = settings.timestamp, isUtc = isUtc))
             Spacer(modifier = Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(text = stringResource(R.string.prefs_data_entries, settings.entriesTotal))
@@ -588,12 +593,14 @@ private fun RowScope.SwitchTile(labelResId: Int, checked: Boolean, onCheckedChan
 }
 
 @Composable
-private fun formatUpdateTime(updateTime: Long): String {
+private fun formatUpdateTime(updateTime: Long, isUtc: Boolean): String {
     val timePattern = stringResource(id = R.string.prefs_updated_time)
     val placeholder = stringResource(id = R.string.pass_time_placeholder)
-    val updateDate = remember(updateTime) {
+    val updateDate = remember(updateTime, isUtc) {
         if (updateTime != 0L) {
-            SimpleDateFormat(timePattern, Locale.getDefault()).format(Date(updateTime))
+            val formatter = SimpleDateFormat(timePattern, Locale.getDefault())
+            if (isUtc) formatter.timeZone = TimeZone.getTimeZone("UTC")
+            formatter.format(Date(updateTime))
         } else {
             placeholder
         }

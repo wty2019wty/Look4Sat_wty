@@ -13,6 +13,7 @@ import com.rtbishop.look4sat.core.domain.repository.IMainContainer
 import com.rtbishop.look4sat.core.domain.repository.ISettingsRepo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -44,6 +45,7 @@ data class SatStatusUiState(
     val reports: Map<String, SatReport> = emptyMap(),
     val fetchedAtUtcMs: Long = 0L,
     val error: String? = null,
+    val isUtc: Boolean = false,
     val upload: AmSatUploadUiState = AmSatUploadUiState()
 )
 
@@ -56,6 +58,11 @@ class SatStatusViewModel(
     val uiState: StateFlow<SatStatusUiState> = _uiState
 
     init {
+        viewModelScope.launch {
+            settingsRepo.otherSettings.collectLatest { settings ->
+                _uiState.update { it.copy(isUtc = settings.stateOfUtc) }
+            }
+        }
         fetch()
     }
 
