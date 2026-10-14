@@ -19,6 +19,7 @@ package com.rtbishop.look4sat.feature.radar
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
@@ -75,6 +76,7 @@ import com.rtbishop.look4sat.core.presentation.formatFrequency
 import com.rtbishop.look4sat.core.presentation.getDefaultPass
 import com.rtbishop.look4sat.core.presentation.isVerticalLayout
 import com.rtbishop.look4sat.core.presentation.layoutPadding
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 private enum class RadarPage(val title: String) {
@@ -99,17 +101,49 @@ fun RadarDestination(navigateUp: () -> Unit) {
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> viewModel.onAction(RadarAction.SstvPermissionResult(granted)) }
-    RadarScreen(uiState, viewModel::onAction, navigateUp, requestMicPermission = {
-        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-    })
+    val saveImage = {
+        viewModel.onAction(
+            RadarAction.SstvSaveImage(
+                context.getString(R.string.sstv_image_saved),
+                context.getString(R.string.sstv_image_save_failed)
+            )
+        )
+    }
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            saveImage()
+        } else {
+            viewModel.onAction(
+                RadarAction.ShowToast(context.getString(R.string.sstv_storage_permission_denied))
+            )
+        }
+    }
+    RadarScreen(
+        uiState, viewModel.timeNow, viewModel::onAction, navigateUp,
+        requestMicPermission = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+        requestSaveImage = {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            } else {
+                saveImage()
+            }
+        }
+    )
 }
 
 @Composable
 private fun RadarScreen(
     uiState: RadarState,
+    timeNow: StateFlow<Long>,
     onAction: (RadarAction) -> Unit,
     navigateUp: () -> Unit,
-    requestMicPermission: () -> Unit
+    requestMicPermission: () -> Unit,
+    requestSaveImage: () -> Unit
 ) {
     val upcomingPass = uiState.currentPass ?: getDefaultPass()
     val addToCalendar: () -> Unit = {
@@ -129,22 +163,22 @@ private fun RadarScreen(
                 TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isTimeAos)
                 IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
             }
-            TopBar { NextPassRow(pass = upcomingPass, isUtc = uiState.isUtc) }
+            TopBar { NextPassRow(pass = upcomingPass, timeNow = timeNow) }
         } else {
             TopBar {
                 IconCard(action = navigateUp, resId = R.drawable.ic_back)
                 TimerRow(timeString = uiState.currentTime, isTimeAos = uiState.isTimeAos)
-                NextPassRow(pass = upcomingPass, modifier = Modifier.weight(1f), isUtc = uiState.isUtc)
+                NextPassRow(pass = upcomingPass, timeNow = timeNow, modifier = Modifier.weight(1f))
                 IconCard(action = addToCalendar, resId = R.drawable.ic_calendar)
             }
         }
         if (isVertical) {
             RadarCard(uiState, Modifier.weight(1f))
-            PagerCard(uiState, onAction, requestMicPermission, Modifier.weight(1f))
+            PagerCard(uiState, onAction, requestMicPermission, requestSaveImage, Modifier.weight(1f))
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 RadarCard(uiState, Modifier.weight(1f))
-                PagerCard(uiState, onAction, requestMicPermission, Modifier.weight(1f))
+                PagerCard(uiState, onAction, requestMicPermission, requestSaveImage, Modifier.weight(1f))
             }
         }
     }
@@ -155,6 +189,7 @@ private fun PagerCard(
     uiState: RadarState,
     onAction: (RadarAction) -> Unit,
     requestMicPermission: () -> Unit,
+    requestSaveImage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val hasCalculatorPage = remember(uiState.transceivers.transmitters) {
@@ -209,7 +244,8 @@ private fun PagerCard(
                         sstv = uiState.sstv,
                         dopplerFrequency = uiState.transceivers.selectedFrequency?.let { formatFrequency(it) },
                         onAction = onAction,
-                        requestMicPermission = requestMicPermission
+                        requestMicPermission = requestMicPermission,
+                        requestSaveImage = requestSaveImage
                     )
                 }
             }

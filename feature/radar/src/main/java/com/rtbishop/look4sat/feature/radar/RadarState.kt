@@ -94,11 +94,19 @@ sealed interface RadarAction {
     // SSTV actions
     data object SstvStartRecording : RadarAction
     data object SstvStopRecording : RadarAction
-    data object SstvSaveImage : RadarAction
+    data class SstvSaveImage(val successMessage: String, val failureMessage: String) : RadarAction
+    data class ShowToast(val message: String) : RadarAction
     data object SstvReset : RadarAction
     data class SstvSelectMode(val modeName: String) : RadarAction
     data class SstvPermissionResult(val granted: Boolean) : RadarAction
 
     // Calculator actions
     data class ChangeCalculatorOffset(val offsetKHz: String) : RadarAction
+
+    /**
+     * The transponder currently driving the calculator (null when the satellite has
+     * no linear transponder). The per-satellite offset follows it instead of the
+     * transceiver selection, so it loads and saves even when nothing is selected.
+     */
+    data class CalculatorTransponderChanged(val catnum: Int?) : RadarAction
 }

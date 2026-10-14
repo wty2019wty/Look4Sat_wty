@@ -17,6 +17,7 @@
  */
 package com.rtbishop.look4sat.feature.radar
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
@@ -50,6 +51,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.time.Duration.Companion.milliseconds
 
 class RadarViewModel(
@@ -70,6 +75,7 @@ class RadarViewModel(
     private var compassOffset = settingsRepo.otherSettings.value.radarCompassOffset
     private var compassOffsetElev = settingsRepo.otherSettings.value.radarCompassOffsetElev
     private var transponders: List<SatRadio> = emptyList()
+    private var calculatorCatnum: Int? = null
     private var sstvDecoder: SstvDecoder? = null
     private var sstvRecordingJob: Job? = null
     private var sensorCollectionJob: Job? = null
@@ -89,6 +95,9 @@ class RadarViewModel(
         )
     )
     val uiState: StateFlow<RadarState> = _uiState
+
+    private val _timeNow = MutableStateFlow(System.currentTimeMillis())
+    val timeNow: StateFlow<Long> = _timeNow
 
     init {
         collectSettingsChanges()  // also handles initial sensor subscription
@@ -197,13 +206,16 @@ class RadarViewModel(
 
     private suspend fun tickPass(pass: OrbitalPass, allRadios: List<SatRadio>) {
         val timeNow = System.currentTimeMillis()
+        _timeNow.value = timeNow
         val pos = satelliteRepo.getPosition(pass.orbitalObject, stationPos, timeNow)
 
         // Recompute celestial positions at most once per minute (they move very slowly)
         if (timeNow - lastCelestialUpdateMs >= 60_000L) {
+            val isFirstUpdate = lastCelestialUpdateMs == 0L
             cachedSunPos = CelestialComputer.getSunPosition(stationPos, timeNow)
             cachedMoonPos = CelestialComputer.getMoonPosition(stationPos, timeNow)
             lastCelestialUpdateMs = timeNow
+            if (isFirstUpdate) logCelestialPositions(timeNow)
         }
 
         val (time, isAos) = computeTimer(pass.isDeepSpace, pass.aosTime, pass.losTime, timeNow)
@@ -216,6 +228,23 @@ class RadarViewModel(
         processRadios(allRadios, pass.orbitalObject, timeNow)
         sendPassData(pos)
     }
+
+    // Logs the computed celestial positions once when the screen opens, and again whenever the
+    // station position changes, so they can be checked against an external ephemeris.
+    // Values are geometric: no atmospheric refraction is applied, unlike most online tools.
+    private fun logCelestialPositions(timeMillis: Long) {
+        val sun = cachedSunPos ?: return
+        val moon = cachedMoonPos ?: return
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT)
+            .apply { timeZone = TimeZone.getTimeZone("UTC") }
+        val tag = "RadarCelestial"
+        Log.i(tag, "Celestial check at ${formatter.format(Date(timeMillis))} UTC")
+        Log.i(tag, "Observer: ${stationPos.latitude.fmt()}, ${stationPos.longitude.fmt()}, ${stationPos.altitude.fmt()}m")
+        Log.i(tag, "Sun:  azimuth=${sun.azimuth.fmt()}° elevation=${sun.elevation.fmt()}°")
+        Log.i(tag, "Moon: azimuth=${moon.azimuth.fmt()}° elevation=${moon.elevation.fmt()}°")
+    }
+
+    private fun Double.fmt(): String = String.format(Locale.ROOT, "%.3f", this)
 
     private fun collectRadioTrackingState() {
         viewModelScope.launch {
@@ -260,16 +289,8 @@ class RadarViewModel(
                 // Compute toggle state before the update so we don't read post-update value
                 val isTogglingOff = _uiState.value.transceivers.selectedUuid == action.uuid
                 val newUuid = if (isTogglingOff) null else action.uuid
-                // Load the saved offset for the newly selected satellite
-                val offsetKHz = if (!isTogglingOff) {
-                    transponders.find { it.uuid == action.uuid }
-                        ?.catnum?.let { settingsRepo.getSatelliteOffset(it) } ?: ""
-                } else ""
                 _uiState.update {
-                    it.copy(
-                        transceivers = it.transceivers.copy(selectedUuid = newUuid),
-                        calculatorOffsetKHz = offsetKHz
-                    )
+                    it.copy(transceivers = it.transceivers.copy(selectedUuid = newUuid))
                 }
                 // Only update the tracking service when selecting a different transponder to
                 // avoid resetting a user-adjusted TX base on re-expand
@@ -300,14 +321,19 @@ class RadarViewModel(
             }
             RadarAction.SstvStartRecording -> startSstvRecording()
             RadarAction.SstvStopRecording -> stopSstvRecording()
-            RadarAction.SstvSaveImage -> {
+            is RadarAction.ShowToast -> showToast(action.message)
+            is RadarAction.SstvSaveImage -> {
+                if (_uiState.value.sstv.isSaving) return
                 val frame = _uiState.value.sstv.currentFrame ?: return
                 val pixels = frame.imagePixels ?: return
                 _uiState.update { it.copy(sstv = it.sstv.copy(isSaving = true)) }
                 viewModelScope.launch {
-                    saveImage(pixels, frame.imageWidth, frame.imageHeight, frame.modeName)
-                    _uiState.update { it.copy(sstv = it.sstv.copy(isSaving = false)) }
-                    showToast("Image saved")
+                    try {
+                        val saved = saveImage(pixels, frame.imageWidth, frame.imageHeight, frame.modeName)
+                        showToast(if (saved) action.successMessage else action.failureMessage)
+                    } finally {
+                        _uiState.update { it.copy(sstv = it.sstv.copy(isSaving = false)) }
+                    }
                 }
             }
             is RadarAction.SstvSelectMode -> {
@@ -320,13 +346,20 @@ class RadarViewModel(
                 _uiState.update { it.copy(sstv = it.sstv.copy(currentFrame = null)) }
             }
             is RadarAction.ChangeCalculatorOffset -> {
-                val catnum = _uiState.value.transceivers.selectedUuid?.let { uuid ->
+                // Keyed by the transponder driving the calculator, so the offset saves
+                // even when no transceiver is selected (or selection was toggled off)
+                val catnum = calculatorCatnum ?: _uiState.value.transceivers.selectedUuid?.let { uuid ->
                     transponders.find { it.uuid == uuid }?.catnum
                 }
                 if (catnum != null) {
                     settingsRepo.setSatelliteOffset(catnum, action.offsetKHz)
                 }
                 _uiState.update { it.copy(calculatorOffsetKHz = action.offsetKHz) }
+            }
+            is RadarAction.CalculatorTransponderChanged -> {
+                calculatorCatnum = action.catnum
+                val offsetKHz = action.catnum?.let { settingsRepo.getSatelliteOffset(it) } ?: ""
+                _uiState.update { it.copy(calculatorOffsetKHz = offsetKHz) }
             }
         }
     }
